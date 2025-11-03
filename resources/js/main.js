@@ -9,16 +9,16 @@ const appState = {
 
 // Patrones de expresión regular para detectar fechas
 const datePatterns = [
+    // Formato DD/MM/YYYY HH:MM:SS
+    /(\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2})/,
+    // Formato MM/DD/YYYY HH:MM:SS
+    /(\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2})/,
     // ISO 8601: 2024-01-15T10:30:45.123Z
     /(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})?)/,
     // Formato común: 2024-01-15 10:30:45
     /(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/,
     // Formato con milisegundos: 2024-01-15 10:30:45.123
     /(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3})/,
-    // Formato DD/MM/YYYY HH:MM:SS
-    /(\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2})/,
-    // Formato MM/DD/YYYY HH:MM:SS
-    /(\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2})/,
     // Formato con nombre de mes: Jan 15 2024 10:30:45
     /([A-Z][a-z]{2}\s+\d{1,2}\s+\d{4}\s+\d{2}:\d{2}:\d{2})/i,
     // Timestamp Unix (10 dígitos)
@@ -320,14 +320,32 @@ function parseText(content, fileName) {
 
 // Buscar fecha en texto
 function findDateInText(text) {
+    let earliestMatch = null;
+
     for (const pattern of datePatterns) {
         const match = text.match(pattern);
+        
         if (match) {
             const date = parseDate(match[1]);
-            if (date) return date;
+            
+            // Si la fecha es válida
+            if (date) {
+                const matchIndex = match.index;
+
+                // Si es la primera fecha que encontramos, la guardamos
+                if (earliestMatch === null) {
+                    earliestMatch = { date: date, index: matchIndex };
+                } 
+                // Si esta fecha aparece ANTES que la que ya teníamos, la reemplazamos
+                else if (matchIndex < earliestMatch.index) {
+                    earliestMatch = { date: date, index: matchIndex };
+                }
+            }
         }
     }
-    return null;
+
+    // Después de probar todos los patrones, devolvemos la fecha del "earliestMatch"
+    return earliestMatch ? earliestMatch.date : null;
 }
 
 // Parsear fecha de diferentes formatos
