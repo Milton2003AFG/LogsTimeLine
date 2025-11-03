@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor de Línea de Tiempo de Logs</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>📊 Visor de Línea de Tiempo de Logs</h1>
+            <div class="header-actions">
+                <button id="loadFileBtn" class="btn btn-primary">
+                    📁 Cargar Archivo de Log
+                </button>
+                <button id="clearAllBtn" class="btn btn-secondary">
+                    🗑️ Limpiar Todo
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Section -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-label">Archivos cargados:</span>
+                <span id="filesCount" class="stat-value">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Total de eventos:</span>
+                <span id="eventsCount" class="stat-value">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Rango de fechas:</span>
+                <span id="dateRange" class="stat-value">-</span>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="filters-section">
+            <div class="filter-group">
+                <label for="searchInput">🔍 Buscar en mensajes:</label>
+                <input type="text" id="searchInput" placeholder="Filtrar por texto...">
+            </div>
+            <div class="filter-group">
+                <label for="sortLevel">Ordenar por Nivel de Evento:</label>
+                <select id="sortLevel">
+                    <option value="tod">Todos</option>
+                    <option value="adv">Advertencia</option>
+                    <option value="cri">Crítico</option>
+                    <option value="err">Error</option>
+                    <option value="det">Detallado</option>
+                    <option value="inf">Información</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="sortOrder">Ordenar:</label>
+                <select id="sortOrder">
+                    <option value="asc">Más antiguo primero</option>
+                    <option value="desc">Más reciente primero</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Timeline Section -->
+        <div class="timeline-container">
+            <div id="emptyState" class="empty-state">
+                <div class="empty-icon">📄</div>
+                <h2>No hay eventos cargados</h2>
+                <p>Haz clic en "Cargar Archivo de Log" para comenzar</p>
+            </div>
+            <div id="timeline" class="timeline"></div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Procesando archivo...</p>
+        </div>
+    </div>
+
+    <script src="js/neutralino.js"></script>
+    <script src="js/main.js"></script>
+    
+    <!-- Script para verificar que Neutralino está cargado -->
+    <script>
+        window.addEventListener('load', function() {
+            if (typeof Neutralino === 'undefined') {
+                console.error('NEUTRALINO NO CARGADO - Ejecuta "neu update" en tu proyecto');
+                document.body.innerHTML = '<div style="padding: 40px; text-align: center; font-family: sans-serif;">' +
+                    '<h1 style="color: #ef4444;">⚠️ Error de Configuración</h1>' +
+                    '<p style="font-size: 18px; margin: 20px 0;">La biblioteca de Neutralino no está cargada.</p>' +
+                    '<p style="font-size: 16px; color: #64748b;">Por favor ejecuta los siguientes comandos:</p>' +
+                    '<pre style="background: #f1f5f9; padding: 20px; border-radius: 8px; text-align: left; max-width: 600px; margin: 20px auto;">' +
+                    'cd mi-app\n' +
+                    'neu update\n' +
+                    'neu run' +
+                    '</pre>' +
+                    '</div>';
+            }
+        });
+    </script>
+</body>
+</html>
