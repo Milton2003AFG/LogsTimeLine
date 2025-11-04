@@ -27,11 +27,11 @@ const datePatterns = [
 
 // Patrones para detectar niveles de log
 const logLevelPatterns = {
-    error: /^Error\b/,
-    critical: /^Crítico\b|^Critical\b/,
-    detailed: /^Detallado\b|^Detailed\b/,
-    warning: /^Advertencia\b|^Warning\b/,
-    info: /^Información\b|^Information\b/,
+    error: /^Error\b|<Level>(2|Error)<\/Level>/,
+    critical: /^Crítico\b|^Critical\b|<Level>(1|Crítico|Critical)<\/Level>/,
+    detailed: /^Detallado\b|^Detailed\b|<Level>(5|Detallado|Detailed)<\/Level>/,
+    warning: /^Advertencia\b|^Warning\b|<Level>(3|Advertencia|Warning)<\/Level>/,
+    info: /^Información\b|^Information\b|<Level>(4|Información|Information)<\/Level>/,
     success: /^success\b|^ok\b|^complete\b|^done\b/
 };
 
@@ -244,7 +244,7 @@ function parseJSON(data, fileName) {
 // Parsear XML
 function parseXML(content, fileName) {
     const events = [];
-    const lines = content.split('\n');
+    const lines = content.split('<Event ');
 
     let currentEvent = null;
     let dateBuffer = null;
