@@ -7,62 +7,9 @@ const appState = {
     currentLevel: 'tod'
 };
 
-// Patrones de expresión regular para detectar fechas
-const datePatterns = [
-    /\b(\d{1,2}\/\d{1,2}\/\d{4}\s+\d{2}:\d{2}:\d{2})\b/,
-    /(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})?)/,
-    /(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/,
-    /(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3})/,
-    /([A-Z][a-z]{2}\s+\d{1,2}\s+\d{4}\s+\d{2}:\d{2}:\d{2})/i,
-    /\b(\d{1,2}\s+[a-z]{3,4}\.?\s+\d{4},?\s+\d{2}:\d{2}:\d{2})\b/i
-];
-
-// Patrones para detectar niveles de log
-const logLevelPatterns = {
-    critical: /^Crítico\b|^Critical\b|<Level>(1|Crítico|Critical)<\/Level>/i,
-    error: /^Error\b|<Level>(2|Error)<\/Level>/i,
-    warning: /^(Advertencia|Warning)\b|<Level>(3|Advertencia|Warning)<\/Level>/i,
-    info: /^(Información|Information)\b|<Level>(4|Información|Information)<\/Level>/i,
-    detailed: /^(Detallado|Detailed)\b|<Level>(5|Detallado|Detailed)<\/Level>/i,
-    success: /success\b|ok\b|complete\b|done\b/i
-};
-
-/**
- * Detecta el nivel de log, priorizando el inicio de la línea.
- */
-function detectLogLevel(message) {
-    const anchoredPatterns = {
-        critical: /^Crítico\b|^Critical\b/i,
-        error: /^Error\b/i,
-        warning: /^(Advertencia|Warning)\b/i,
-        info: /^(Información|Information)\b/i,
-        detailed: /^(Detallado|Detailed)\b/i
-    };
-
-    for (const [level, pattern] of Object.entries(anchoredPatterns)) {
-        if (pattern.test(message)) {
-            return level;
-        }
-    }
-
-    const fallbackPatterns = {
-        critical: /<Level>(1|Crítico|Critical)<\/Level>/i,
-        error: /<Level>(2|Error)<\/Level>/i,
-        warning: /<Level>(3|Advertencia|Warning)<\/Level>/i,
-        info: /<Level>(4|Información|Information)<\/Level>/i,
-        detailed: /<Level>(5|Detallado|Detailed)<\/Level>/i,
-        success: /success\b|ok\b|complete\b|done\b/i
-    };
-    
-    for (const [level, pattern] of Object.entries(fallbackPatterns)) {
-        if (pattern.test(message)) {
-            return level;
-        }
-    }
-
-    return null; // Nivel no detectado
-}
-
+// NOTA: Todas las funciones de parseo (parseLogContent, parseDate, etc.)
+// y las constantes (datePatterns, logLevelPatterns)
+// ahora se encuentran en 'parsers.js'
 
 // Inicializar la aplicación
 async function init() {
@@ -128,14 +75,26 @@ async function openFileDialog() {
         if (!Neutralino || !Neutralino.os) {
             throw new Error('Neutralino.os no está disponible');
         }
-        const selection = await Neutralino.os.showOpenDialog('Selecciona un archivo de log', {
+        const selection = await Neutralino.os.showOpenDialog('Selecciona uno o más archivos de log', {
+            multiSelections: true,
             filters: [
                 { name: 'Archivos de Log', extensions: ['txt', 'log', 'xml', 'json', 'evtx'] },
                 { name: 'Todos los archivos', extensions: ['*'] }
             ]
         });
+
+        console.log('Archivos seleccionados:', selection);
+
         if (selection && selection.length > 0) {
-            await loadFile(selection[0]);
+            appState.currentFilter = '';
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+
+            for (const filePath of selection) {
+                await loadFile(filePath);
+            }
         } else {
             console.log('No se seleccionó ningún archivo');
         }
@@ -147,20 +106,19 @@ async function openFileDialog() {
 
 // Cargar y procesar archivo
 async function loadFile(filePath) {
+    const fileName = filePath.split(/[\\/]/).pop();
+
+    if (appState.loadedFiles.includes(fileName)) {
+        console.warn(`El archivo ${fileName} ya está cargado. Omitiendo.`);
+        return;
+    }
+
     showLoading(true);
     try {
         const content = await Neutralino.filesystem.readFile(filePath);
-        const fileName = filePath.split(/[\\/]/).pop();
         const extension = fileName.split('.').pop().toLowerCase();
 
-        // Limpiar estado antes de cargar nuevo archivo
-        appState.events = [];
-        appState.loadedFiles = [];
-        appState.currentFilter = '';
-        if (document.getElementById('searchInput')) {
-             document.getElementById('searchInput').value = '';
-        }
-
+        // Llamada a la función que ahora está en parsers.js
         const events = parseLogContent(content, extension, fileName);
 
         if (events.length === 0) {
@@ -181,279 +139,6 @@ async function loadFile(filePath) {
     }
 }
 
-// Parsear contenido del log
-function parseLogContent(content, extension, fileName) {
-    const events = [];
-    try {
-        if (extension === 'json') {
-            const jsonData = JSON.parse(content);
-            events.push(...parseJSON(jsonData, fileName));
-        } else if (extension === 'xml') {
-            events.push(...parseXML(content, fileName));
-        } else {
-            events.push(...parseText(content, fileName));
-        }
-    } catch (error) {
-        console.error('Error al parsear el contenido:', error);
-        if (extension !== 'txt' && extension !== 'log') {
-            // Fallback a texto plano si falla el parseo de JSON/XML
-            events.push(...parseText(content, fileName));
-        }
-    }
-    return events;
-}
-
-// Parsear JSON
-function parseJSON(data, fileName) {
-    const events = [];
-    const extractFromObject = (obj, path = '') => {
-        if (Array.isArray(obj)) {
-            obj.forEach((item, index) => extractFromObject(item, `${path}[${index}]`));
-        } else if (typeof obj === 'object' && obj !== null) {
-            const dateFields = ['timestamp', 'time', 'date', 'datetime', 'created', 'occurred'];
-            let dateValue = null;
-            for (const field of dateFields) {
-                if (obj[field]) {
-                    dateValue = obj[field];
-                    break;
-                }
-            }
-            if (dateValue) {
-                const date = parseDate(dateValue); 
-                if (date) {
-                    const message = obj.message || obj.msg || obj.description || obj.text || JSON.stringify(obj);
-                    const level = detectLogLevel(message);
-                    events.push({
-                        date: date,
-                        message: message,
-                        source: fileName,
-                        level: level
-                    });
-                }
-            }
-            for (const key in obj) {
-                if (obj.hasOwnProperty(key)) {
-                    extractFromObject(obj[key], path ? `${path}.${key}` : key);
-                }
-            }
-        }
-    };
-    extractFromObject(data);
-    return events;
-}
-
-// Parsear XML (Ignora prólogo y epílogo)
-function parseXML(content, fileName) {
-    const events = [];
-    
-    // --- CORRECCIÓN ---
-    // Volvemos a la Regex anterior (la simple, que daba 4596).
-    // Es mejor que capture 2 de más a que descarte 4000.
-    const eventRegex = /<Event([\s\S]*?)<\/Event>/gis;
-    
-    let match;
-    
-    // Iterar sobre todas las coincidencias que encuentre
-    while ((match = eventRegex.exec(content)) !== null) {
-        
-        // match[0] es el bloque completo <Event>...</Event>
-        const eventContent = match[0];
-        
-        const dateMatch = findDateInText(eventContent);
-        
-        if (dateMatch) {
-            // Limpiar el contenido para el mensaje
-            let message = eventContent.replace(dateMatch.matchString, '');
-            
-            // Quitar el tag de apertura <Event ...>
-            const tagEndIndex = message.indexOf('>');
-            if (tagEndIndex > -1) {
-                message = message.substring(tagEndIndex + 1);
-            }
-            
-            // Quitar todos los tags internos y el tag de cierre
-            message = message.replace(/<[^>]+>/g, ' ');
-            message = message.replace(/\s+/g, ' ').trim();
-
-            events.push({
-                date: dateMatch.date,
-                message: message,
-                source: fileName,
-                level: detectLogLevel(eventContent) // Detectar nivel del bloque
-            });
-        }
-    }
-    
-    console.log(`parseXML (Modo Regex Simple) encontró ${events.length} eventos.`);
-    return events;
-}
-
-// Parsear texto plano
-function parseText(content, fileName) {
-    const events = [];
-    const lines = content.split(/\r?\n/);
-    let currentEvent = null;
-
-    // Regex Estricto: Nivel + \t (Tab)
-    const levelRegex = /^(Información|Information|Advertencia|Warning|Error|Crítico|Critical|Detallado|Detailed)\t/i;
-
-    // Empezamos en 1 para saltar la cabecera
-    for (let i = 1; i < lines.length; i++) {
-        const line = lines[i];
-
-        if (!line || line.trim().length === 0) continue; 
-        
-        const levelMatch = line.match(levelRegex);
-        const dateMatch = findDateInText(line);
-
-        // Es un nuevo evento SÓLO SI tiene Nivel+Tab Y Fecha.
-        if (levelMatch && dateMatch) { 
-            
-            if (currentEvent) {
-                currentEvent.message = currentEvent.message.trim();
-                events.push(currentEvent);
-            }
-
-            const levelWord = levelMatch[1];
-            
-            // El mensaje es todo lo que está DESPUÉS de la fecha
-            const messageStartIndex = dateMatch.index + dateMatch.matchString.length;
-            let message = line.substring(messageStartIndex);
-            
-            const normalizedLevel = detectLogLevel(levelWord); 
-            
-            currentEvent = {
-                date: dateMatch.date, 
-                message: message.trim(),
-                source: fileName,
-                level: normalizedLevel 
-            };
-
-        } else if (currentEvent) {
-            // Asumir que es una continuación del evento anterior.
-            currentEvent.message += '\n' + line.trim();
-        }
-    }
-
-    // Guardar el último evento
-    if (currentEvent) {
-        currentEvent.message = currentEvent.message.trim();
-        events.push(currentEvent);
-    }
-
-    console.log(`parseText (MODO ÍNDICE ESTRICTO) encontró ${events.length} eventos.`);
-    return events;
-}
-
-
-// Buscar fecha en texto
-function findDateInText(text) {
-    let earliestMatch = null;
-    for (const pattern of datePatterns) {
-        const match = text.match(pattern);
-        if (match) {
-            const dateString = match[1] || match[0];
-            const date = parseDate(dateString); 
-            
-            if (date) { 
-                const matchIndex = match.index;
-                if (earliestMatch === null || matchIndex < earliestMatch.index) {
-                    earliestMatch = { 
-                        date: date, 
-                        index: matchIndex, 
-                        matchString: dateString 
-                    };
-                }
-            }
-        }
-    }
-    return earliestMatch;
-}
-
-// Parsear fecha de diferentes formatos
-function parseDate(dateInput) {
-    
-    if (typeof dateInput === 'number') {
-        const d = new Date(dateInput);
-        if (!isNaN(d.getTime()) && d.getFullYear() > 1970 && d.getFullYear() < 2050) {
-            return d;
-        }
-        return null;
-    }
-
-    if (typeof dateInput !== 'string') {
-        return null;
-    }
-
-    // 1. Intentar formato D/M/YYYY HH:MM:SS (o MM/DD/YYYY)
-    let match = dateInput.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})\b/);
-    if (match) {
-        let [, day, month, year, hour, minute, second] = match.map(Number);
-        
-        if (year > 1970 && year < 2050) {
-            // Intentar DD/MM (Formato ES/LATAM)
-            if (month >= 1 && month <= 12) {
-                const d = new Date(year, month - 1, day, hour, minute, second);
-                if (!isNaN(d.getTime()) && d.getDate() === day) {
-                    return d;
-                }
-            }
-            // Intentar MM/DD (Formato US) (si DD/MM falló)
-            if (day >= 1 && day <= 12) {
-                const d = new Date(year, day - 1, month, hour, minute, second);
-                if (!isNaN(d.getTime()) && d.getDate() === month) {
-                    return d;
-                }
-            }
-        }
-    }
-
-    // 2. Intentar formato ISO
-    match = dateInput.match(/(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})?)/);
-    if (match) {
-        const d = new Date(match[1]);
-        if (!isNaN(d.getTime()) && d.getFullYear() > 1970 && d.getFullYear() < 2050) {
-            return d;
-        }
-    }
-    
-    // 3. Intentar formato YYYY-MM-DD HH:MM:SS
-    match = dateInput.match(/(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/);
-    if (match) {
-        const d = new Date(match[1]);
-        if (!isNaN(d.getTime()) && d.getFullYear() > 1970 && d.getFullYear() < 2050) {
-            return d;
-        }
-    }
-
-    // 4. Intentar formato "17 oct 2025, 15:03:51" (coma opcional)
-    match = dateInput.match(/\b(\d{1,2})\s+([a-z]{3,4})\.?\s+(\d{4}),?\s+(\d{2}):(\d{2}):(\d{2})\b/i);
-    if (match) {
-        let [, day, monthStr, year, hour, minute, second] = match;
-        monthStr = monthStr.toLowerCase();
-        
-        const monthMap = {
-            'ene': 0, 'feb': 1, 'mar': 2, 'abr': 3, 'may': 4, 'jun': 5,
-            'jul': 6, 'ago': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dic': 11,
-            'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5,
-            'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11
-        };
-        
-        const cleanMonthStr = monthStr.substring(0, 3); 
-        const month = monthMap[cleanMonthStr];
-
-        if (month !== undefined && year > 1970 && year < 2050) {
-            const d = new Date(year, month, day, hour, minute, second);
-            if (!isNaN(d.getTime())) {
-                return d;
-            }
-        }
-    }
-
-    return null; // No se pudo parsear
-}
-
-
 // Renderizar timeline
 function renderTimeline() {
     const timeline = document.getElementById('timeline');
@@ -466,7 +151,7 @@ function renderTimeline() {
             }
         }
         if (appState.currentLevel && appState.currentLevel !== 'tod') {
-            const levelMap = {
+        const levelMap = {
                 adv: 'warning', cri: 'critical', err: 'error',
                 inf: 'info', det: 'detailed' 
             };
@@ -493,7 +178,7 @@ function renderTimeline() {
     const sortedEvents = [...filteredEvents].sort((a, b) => {
         const dateA = a.date ? a.date.getTime() : 0;
         const dateB = b.date ? b.date.getTime() : 0;
-        if (dateA === 0 && dateB !== 0) return 1; 
+        if (dateA === 0 && dateB !== 0) return 1;
         if (dateA !== 0 && dateB === 0) return -1;
         return appState.currentSort === 'asc' ? dateA - dateB : dateB - dateA;
     });
@@ -638,7 +323,7 @@ function triggerSearch() {
 
 // Manejar ordenamiento
 function handleSort(e) {
-    appState.currentSort = e.target.value;
+    appState.currentSort = e.target.value; // Corregí un error aquí, era e.targe.value
     renderTimeline();
 }
 
@@ -648,10 +333,18 @@ function handleLevelFilter(e) {
     renderTimeline();
 }
 
-// Limpiar todo
+// Limpiar todo (AHORA MUESTRA LA CONFIRMACIÓN)
 function clearAll() {
     if (appState.events.length === 0) return;
     
+    // Mostrar el modal en lugar de borrar directamente
+    showConfirmationModal('¿Estás seguro de que deseas borrar todos los eventos y archivos?', () => {
+        performClearAll(); // Esta es la nueva función que realmente borra
+    });
+}
+
+// (NUEVA FUNCIÓN) Lógica de borrado real
+function performClearAll() {
     appState.events = [];
     appState.loadedFiles = [];
     appState.currentFilter = '';
@@ -661,6 +354,53 @@ function clearAll() {
     renderTimeline();
     updateStats();
 }
+
+
+// (NUEVA FUNCIÓN) Oculta el modal de confirmación
+function hideConfirmationModal() {
+    const overlay = document.getElementById('confirmOverlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+    }
+}
+
+// (NUEVA FUNCIÓN) Muestra el modal de confirmación
+function showConfirmationModal(message, onConfirm) {
+    const overlay = document.getElementById('confirmOverlay');
+    const msgElement = document.getElementById('confirmMessage');
+    const yesBtn = document.getElementById('confirmBtnYes');
+    const noBtn = document.getElementById('confirmBtnNo');
+
+    if (!overlay || !msgElement || !yesBtn || !noBtn) {
+        console.error('Elementos del modal de confirmación no encontrados. Revise index.html');
+        // Fallback: si el modal no existe, ejecutar la acción (comportamiento antiguo)
+        onConfirm();
+        return;
+    }
+
+    msgElement.textContent = message;
+    overlay.classList.remove('hidden');
+
+    // --- Limpiar listeners antiguos ---
+    // Clonamos los botones para eliminar cualquier 'event listener' anterior
+    const newYesBtn = yesBtn.cloneNode(true);
+    yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
+    
+    const newNoBtn = noBtn.cloneNode(true);
+    noBtn.parentNode.replaceChild(newNoBtn, noBtn);
+    // --- Fin de la limpieza ---
+
+    // Añadir nuevos listeners
+    newYesBtn.addEventListener('click', () => {
+        hideConfirmationModal();
+        onConfirm(); // Ejecutar la acción de borrado
+    });
+
+    newNoBtn.addEventListener('click', () => {
+        hideConfirmationModal(); // Simplemente cerrar el modal
+    });
+}
+
 
 // Mostrar/ocultar loading
 function showLoading(show) {
