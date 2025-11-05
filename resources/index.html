@@ -10,7 +10,7 @@
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <h1>📊 Visor de Línea de Tiempo de Logs</h1>
+            <h1>📊 Visor de Línea de Tiempo de Logs de Windows</h1>
             <div class="header-actions">
                 <button id="loadFileBtn" class="btn btn-primary">
                     📁 Cargar Archivo de Log
@@ -39,11 +39,15 @@
 
         <!-- Filters Section -->
         <div class="filters-section">
-            <div class="filter-group">
-                <label for="searchInput">🔍 Buscar en mensajes:</label>
+        <div class="filter-group">
+            <label for="searchInput">🔍 Buscar en mensajes:</label>
+            <div class="search-wrapper">
                 <input type="text" id="searchInput" placeholder="Filtrar por texto...">
+                <!-- NUEVO: Botón de búsqueda -->
+                <button id="searchButton" class="btn-search">🔍</button>
             </div>
-            <div class="filter-group">
+        </div>
+        <div class="filter-group">
                 <label for="sortLevel">Ordenar por Nivel de Evento:</label>
                 <select id="sortLevel">
                     <option value="tod">Todos</option>

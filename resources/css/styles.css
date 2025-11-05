@@ -6,10 +6,10 @@
 }
 
 :root {
-    --primary-color: #3b82f6;     
-    --primary-hover: #2563eb;    
-    --secondary-color: #4b5563;  
-    --secondary-hover: #374151; 
+    --primary-color: #3b82f6;
+    --primary-hover: #2563eb;
+    --secondary-color: #4b5563;
+    --secondary-hover: #374151;
     --success-color: #10b981;
     --danger-color: #a82424;
     --warning-color: #f59e0b;
@@ -17,15 +17,14 @@
     --detailed-color: #3b82f6;
     --critical-color: #ff0000;
 
-    --bg-primary: #1f2937;      
-    --bg-secondary: #111827;   
-    --bg-tertiary: #374151;    
+    --bg-primary: #1f2937;
+    --bg-secondary: #111827;
+    --bg-tertiary: #374151;
     
-    --text-primary: #f9fafb;    
-    --text-secondary: #9ca3af;  
+    --text-primary: #f9fafb;
+    --text-secondary: #9ca3af;
 
-
-    --border-color: #4b5563;  
+    --border-color: #4b5563;
 
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
@@ -33,9 +32,10 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+Cantarell, sans-serif;
     background: var(--bg-secondary);
-    color: var(--text-primary); 
+    color: var(--text-primary);
     line-height: 1.6;
 }
 
@@ -46,7 +46,7 @@ body {
 }
 
 .header {
-    background: var(--bg-primary); 
+    background: var(--bg-primary);
     padding: 24px;
     border-radius: 12px;
     box-shadow: var(--shadow-md);
@@ -60,7 +60,7 @@ body {
 
 .header h1 {
     font-size: 28px;
-    color: var(--text-primary); 
+    color: var(--text-primary);
     font-weight: 700;
 }
 
@@ -110,7 +110,7 @@ body {
 
 /* Stats Bar */
 .stats-bar {
-    background: var(--bg-primary); 
+    background: var(--bg-primary);
     padding: 20px;
     border-radius: 12px;
     box-shadow: var(--shadow-sm);
@@ -130,13 +130,13 @@ body {
 
 .stat-label {
     font-size: 13px;
-    color: var(--text-secondary); 
+    color: var(--text-secondary);
     font-weight: 500;
 }
 
 .stat-value {
     font-size: 24px;
-    color: var(--primary-color); 
+    color: var(--primary-color);
     font-weight: 700;
 }
 
@@ -162,9 +162,8 @@ body {
 .filter-group label {
     font-size: 14px;
     font-weight: 600;
-    color: var(--text-primary); 
+    color: var(--text-primary);
 }
-
 
 .filter-group input,
 .filter-group select {
@@ -173,8 +172,8 @@ body {
     border-radius: 8px;
     font-size: 14px;
     transition: all 0.2s ease;
-    background: var(--bg-secondary); 
-    color: var(--text-primary); 
+    background: var(--bg-secondary);
+    color: var(--text-primary);
 }
 .filter-group select option {
     background: var(--bg-primary);
@@ -185,17 +184,79 @@ body {
 .filter-group select:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); 
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
+/* --- Nuevos estilos para el botón de búsqueda --- */
+
+.filter-group .search-wrapper {
+    position: relative;
+    display: flex;
+}
+
+/* El input ahora ocupa todo el espacio, pero deja espacio a la derecha */
+.filter-group .search-wrapper input {
+    flex: 1;
+    padding-right: 50px; /* Espacio para el botón */
+    /* Asegurarse que el borde derecho no se redondee */
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    /* Solucionar bug de borde al hacer foco */
+    position: relative;
+    z-index: 1;
+}
+
+/* El nuevo botón de búsqueda */
+.btn-search {
+    width: 50px;
+    padding: 10px;
+    border: 2px solid var(--primary-color); /* Borde primario */
+    border-left: none; /* Quitar borde izquierdo para unirlo al input */
+    background: var(--primary-color);
+    color: white;
+    font-size: 18px; /* Icono de lupa más grande */
+    cursor: pointer;
+    
+    /* Alinear con el input */
+    border-radius: 0 8px 8px 0; /* Redondear esquina derecha */
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    
+    /* Alinear verticalmente (por si la altura difiere) */
+    height: 100%;
+    align-self: center;
+    /* Solucionar bug de borde al hacer foco */
+    position: relative;
+    z-index: 2;
+    margin-left: -2px; /* Superponer sobre el borde del input */
+}
+
+.btn-search:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+/* Ajuste de foco para el wrapper */
+.filter-group .search-wrapper input:focus + .btn-search {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    z-index: 0; /* Poner detrás del input al hacer foco */
+}
+
+/* --- Fin Estilos de Búsqueda --- */
+
+
 .timeline-container {
-    background: var(--bg-primary); 
+    background: var(--bg-primary);
     padding: 24px;
     border-radius: 12px;
     box-shadow: var(--shadow-md);
     min-height: 400px;
     position: relative;
-    overflow: hidden; 
+    overflow: hidden;
 }
 
 .empty-state {
@@ -214,18 +275,18 @@ body {
 .empty-icon {
     font-size: 72px;
     margin-bottom: 16px;
-    opacity: 0.3; 
+    opacity: 0.3;
 }
 
 .empty-state h2 {
     font-size: 24px;
-    color: var(--text-primary); 
+    color: var(--text-primary);
     margin-bottom: 8px;
 }
 
 .empty-state p {
     font-size: 16px;
-    color: var(--text-secondary); 
+    color: var(--text-secondary);
 }
 
 .timeline {
@@ -274,7 +335,7 @@ body {
     width: 18px;
     height: 18px;
     background: var(--primary-color);
-    border: 3px solid var(--bg-primary); 
+    border: 3px solid var(--bg-primary);
     border-radius: 50%;
     box-shadow: 0 0 0 3px var(--primary-color);
     z-index: 1;
@@ -286,7 +347,7 @@ body {
 
 .event-time {
     display: inline-block;
-    background: var(--primary-hover); 
+    background: var(--primary-hover);
     color: white;
     padding: 6px 14px;
     border-radius: 20px;
@@ -296,22 +357,35 @@ body {
 }
 
 .event-card {
-    background: var(--bg-tertiary); 
-    border: 1px solid var(--border-color); 
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    /* *** NUEVO: Borde izquierdo para color de nivel *** */
+    border-left: 5px solid var(--border-color);
     border-radius: 10px;
     padding: 16px;
     transition: all 0.2s ease;
 }
 
+/* *** NUEVOS ESTILOS DE BORDE POR NIVEL *** */
+.event-card.event-level-default { border-left-color: var(--secondary-color); }
+.event-card.event-level-info { border-left-color: var(--info-color); }
+.event-card.event-level-success { border-left-color: var(--success-color); }
+.event-card.event-level-detailed { border-left-color: var(--detailed-color); }
+.event-card.event-level-warning { border-left-color: var(--warning-color); }
+.event-card.event-level-error { border-left-color: var(--danger-color); }
+.event-card.event-level-critical { border-left-color: var(--critical-color); }
+
 .event-card:hover {
     border-color: var(--primary-color);
+    /* Mantener el color del borde izquierdo al hacer hover */
+    border-left-width: 5px;
     box-shadow: var(--shadow-lg);
     transform: translateX(4px);
 }
 
 .event-source {
     font-size: 12px;
-    color: var(--text-secondary); 
+    color: var(--text-secondary);
     font-weight: 600;
     margin-bottom: 8px;
     display: flex;
@@ -320,11 +394,12 @@ body {
 }
 
 .event-message {
-    color: var(--text-primary); 
+    color: var(--text-primary);
     font-size: 14px;
     line-height: 1.6;
     word-wrap: break-word;
-    white-space: pre-wrap; 
+    white-space: normal;
+    word-wrap: normal;
 }
 
 .event-message strong {
@@ -337,7 +412,6 @@ body {
     margin: 8px 0;
 }
 
-
 .log-level {
     display: inline-block;
     padding: 3px 8px;
@@ -345,7 +419,8 @@ body {
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
-    margin-left: 8px;
+    /* margin-left: 8px; <-- Quitado para que se alinee bien */
+    margin-left: 0;
 }
 
 .log-level.error {
@@ -355,7 +430,7 @@ body {
 
 .log-level.warning {
     background: var(--warning-color);
-    color: var(--bg-primary); 
+    color: var(--bg-primary);
 }
 
 .log-level.info {
@@ -370,12 +445,12 @@ body {
 
 .log-level.detailed {
    background: var(--detailed-color);
-    color: white; 
+    color: white;
 }
 
 .log-level.critical {
    background: var(--critical-color);
-    color: white; 
+    color: white;
 }
 
 .loading-overlay {
@@ -385,7 +460,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8); 
+    background: rgba(0, 0, 0, 0.8);
     z-index: 1000;
     justify-content: center;
     align-items: center;
@@ -419,6 +494,77 @@ body {
     }
 }
 
+/* --- Estilos para Tarjetas Plegables (Actualizado) --- */
+
+.event-card.event-card-collapsible {
+    cursor: pointer;
+}
+
+.event-card.is-open {
+    /* Estilo para la tarjeta cuando está abierta */
+    background-color: #3e4c60; /* Un poco más claro que var(--bg-tertiary) */
+}
+
+.event-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: opacity 0.2s ease;
+}
+
+.event-summary-message {
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.6;
+    word-wrap: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* El mensaje ocupa el espacio restante */
+    flex: 1;
+}
+
+.event-detail {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+    animation: fadeInUp 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.event-detail .event-source {
+    margin-bottom: 0;
+}
+
+.event-detail .event-source .log-level {
+    display: none;
+}
+
+.event-detail .event-message-detail {
+    font-size: 14px;
+}
+
+.event-detail .event-message-detail pre {
+    background-color: var(--bg-secondary);
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* --- Fin Estilos Plegables --- */
+
 @media (max-width: 768px) {
     .header {
         flex-direction: column;
@@ -448,6 +594,12 @@ body {
 
     .timeline-event::before {
         left: 7px;
+    }
+
+    /* En móvil, el resumen de mensaje puede ser más corto */
+    .event-summary-message {
+        /* Permitir que se rompa en varias líneas en móvil si es necesario */
+        white-space: normal;
     }
 }
 
