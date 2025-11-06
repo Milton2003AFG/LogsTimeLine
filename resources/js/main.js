@@ -7,10 +7,6 @@ const appState = {
     currentLevel: 'tod'
 };
 
-// NOTA: Todas las funciones de parseo (parseLogContent, parseDate, etc.)
-// y las constantes (datePatterns, logLevelPatterns)
-// ahora se encuentran en 'parsers.js'
-
 // Inicializar la aplicación
 async function init() {
     try {
@@ -343,7 +339,7 @@ function clearAll() {
     });
 }
 
-// (NUEVA FUNCIÓN) Lógica de borrado real
+// Lógica de borrado real
 function performClearAll() {
     appState.events = [];
     appState.loadedFiles = [];
@@ -356,7 +352,7 @@ function performClearAll() {
 }
 
 
-// (NUEVA FUNCIÓN) Oculta el modal de confirmación
+// Oculta el modal de confirmación
 function hideConfirmationModal() {
     const overlay = document.getElementById('confirmOverlay');
     if (overlay) {
@@ -364,7 +360,7 @@ function hideConfirmationModal() {
     }
 }
 
-// (NUEVA FUNCIÓN) Muestra el modal de confirmación
+// Muestra el modal de confirmación
 function showConfirmationModal(message, onConfirm) {
     const overlay = document.getElementById('confirmOverlay');
     const msgElement = document.getElementById('confirmMessage');
@@ -373,7 +369,7 @@ function showConfirmationModal(message, onConfirm) {
 
     if (!overlay || !msgElement || !yesBtn || !noBtn) {
         console.error('Elementos del modal de confirmación no encontrados. Revise index.html');
-        // Fallback: si el modal no existe, ejecutar la acción (comportamiento antiguo)
+        // si el modal no existe se busca ejecutar la acción 
         onConfirm();
         return;
     }
@@ -381,14 +377,12 @@ function showConfirmationModal(message, onConfirm) {
     msgElement.textContent = message;
     overlay.classList.remove('hidden');
 
-    // --- Limpiar listeners antiguos ---
     // Clonamos los botones para eliminar cualquier 'event listener' anterior
     const newYesBtn = yesBtn.cloneNode(true);
     yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
     
     const newNoBtn = noBtn.cloneNode(true);
     noBtn.parentNode.replaceChild(newNoBtn, noBtn);
-    // --- Fin de la limpieza ---
 
     // Añadir nuevos listeners
     newYesBtn.addEventListener('click', () => {
@@ -402,7 +396,7 @@ function showConfirmationModal(message, onConfirm) {
 }
 
 
-// Mostrar/ocultar loading
+// Mostrar o ocultar loading
 function showLoading(show) {
     const overlay = document.getElementById('loadingOverlay');
     if (!overlay) return;

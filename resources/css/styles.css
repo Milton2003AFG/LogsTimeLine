@@ -187,7 +187,6 @@ Cantarell, sans-serif;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
-/* --- Estilos para la barra de búsqueda --- */
 
 .filter-group .search-wrapper {
     position: relative;
@@ -238,8 +237,6 @@ Cantarell, sans-serif;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     z-index: 0; 
 }
-
-/* --- Fin Estilos de Búsqueda --- */
 
 
 .timeline-container {
@@ -485,7 +482,6 @@ Cantarell, sans-serif;
     }
 }
 
-/* --- Estilos para Tarjetas Plegables --- */
 
 .event-card.event-card-collapsible {
     cursor: pointer;
@@ -552,9 +548,6 @@ Cantarell, sans-serif;
     display: none !important;
 }
 
-/* --- Fin Estilos Plegables --- */
-
-/* --- Modal de Confirmación --- */
 .confirm-overlay {
     position: fixed;
     top: 0;
@@ -628,8 +621,6 @@ Cantarell, sans-serif;
 .btn-confirm-no:hover {
     background-color: #ffffff;
 }
-/* --- Fin Modal de Confirmación --- */
-
 
 @media (max-width: 768px) {
     .header {

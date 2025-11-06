@@ -81,7 +81,7 @@ function parseLogContent(content, extension, fileName) {
     return events;
 }
 
-// Parseo de objetos JSON (recursivo)
+// Parseo de objetos JSON 
 function parseJSON(data, fileName) {
     const events = [];
     const extractFromObject = (obj, path = '') => {
@@ -120,7 +120,7 @@ function parseJSON(data, fileName) {
     return events;
 }
 
-// Parseo de XML (basado en Regex, busca bloques <Event>)
+// Parseo de XML 
 function parseXML(content, fileName) {
     const events = [];
     const eventRegex = /<Event([\s\S]*?)<\/Event>/gis;
@@ -156,8 +156,7 @@ function parseText(content, fileName) {
     const events = [];
     const lines = content.split(/\r?\n/);
     let currentEvent = null;
-
-    // Patrón estricto para Windows/Syslog: Nivel + Tab + ...
+    
     const levelRegex = /^(Información|Information|Advertencia|Warning|Error|Crítico|Critical|Detallado|Detailed)\t/i;
 
     // La iteración comienza en 1 para ignorar líneas de encabezado comunes.
