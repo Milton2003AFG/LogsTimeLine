@@ -156,7 +156,7 @@ function parseText(content, fileName) {
     const events = [];
     const lines = content.split(/\r?\n/);
     let currentEvent = null;
-    
+
     const levelRegex = /^(Información|Information|Advertencia|Warning|Error|Crítico|Critical|Detallado|Detailed)\t/i;
 
     // La iteración comienza en 1 para ignorar líneas de encabezado comunes.
@@ -168,7 +168,6 @@ function parseText(content, fileName) {
         const levelMatch = line.match(levelRegex);
         const dateMatch = findDateInText(line);
 
-        // Nuevo evento si: (1) tiene Nivel+Tab+... Y (2) tiene Fecha.
         if (levelMatch && dateMatch) { 
             
             if (currentEvent) {
@@ -192,7 +191,7 @@ function parseText(content, fileName) {
             };
 
         } else if (currentEvent) {
-            // Continuación del evento anterior.
+            // Continuación del evento anterior
             currentEvent.message += '\n' + line.trim();
         }
     }
