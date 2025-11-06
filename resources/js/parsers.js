@@ -1,14 +1,20 @@
-// Patrones de expresión regular para detectar fechas
+// Patrones de expresión regular para detectar fechas (ordenados por especificidad)
 const datePatterns = [
+    // DD/MM/YYYY HH:MM:SS (o MM/DD/YYYY)
     /\b(\d{1,2}\/\d{1,2}\/\d{4}\s+\d{2}:\d{2}:\d{2})\b/,
+    // ISO 8601: YYYY-MM-DDTHH:MM:SS.sssZ
     /(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})?)/,
+    // YYYY-MM-DD HH:MM:SS
     /(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/,
+    // YYYY-MM-DD HH:MM:SS.sss
     /(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d{3})/,
+    // Month Day YYYY HH:MM:SS (Jan 15 2024...)
     /([A-Z][a-z]{2}\s+\d{1,2}\s+\d{4}\s+\d{2}:\d{2}:\d{2})/i,
+    // Day Month YYYY HH:MM:SS (17 Oct. 2025...)
     /\b(\d{1,2}\s+[a-z]{3,4}\.?\s+\d{4},?\s+\d{2}:\d{2}:\d{2})\b/i
 ];
 
-// Patrones para detectar niveles de log
+// Patrones para detectar niveles de log (anclados al inicio o en etiquetas XML)
 const logLevelPatterns = {
     critical: /^Crítico\b|^Critical\b|<Level>(1|Crítico|Critical)<\/Level>/i,
     error: /^Error\b|<Level>(2|Error)<\/Level>/i,
@@ -51,10 +57,10 @@ function detectLogLevel(message) {
         }
     }
 
-    return null; // Nivel no detectado
+    return null;
 }
 
-// Parsear contenido del log
+// Función principal para dirigir el parseo
 function parseLogContent(content, extension, fileName) {
     const events = [];
     try {
@@ -69,14 +75,13 @@ function parseLogContent(content, extension, fileName) {
     } catch (error) {
         console.error('Error al parsear el contenido:', error);
         if (extension !== 'txt' && extension !== 'log') {
-            // Fallback a texto plano si falla el parseo de JSON/XML
             events.push(...parseText(content, fileName));
         }
     }
     return events;
 }
 
-// Parsear JSON
+// Parseo de objetos JSON (recursivo)
 function parseJSON(data, fileName) {
     const events = [];
     const extractFromObject = (obj, path = '') => {
@@ -115,33 +120,22 @@ function parseJSON(data, fileName) {
     return events;
 }
 
-// Parsear XML (Ignora prólogo y epílogo)
+// Parseo de XML (basado en Regex, busca bloques <Event>)
 function parseXML(content, fileName) {
     const events = [];
-    
     const eventRegex = /<Event([\s\S]*?)<\/Event>/gis;
     
     let match;
-    
-    // Iterar sobre todas las coincidencias que encuentre
     while ((match = eventRegex.exec(content)) !== null) {
-        
-        // match[0] es el bloque completo <Event>...</Event>
         const eventContent = match[0];
-        
         const dateMatch = findDateInText(eventContent);
         
         if (dateMatch) {
-            // Limpiar el contenido para el mensaje
             let message = eventContent.replace(dateMatch.matchString, '');
-            
-            // Quitar el tag de apertura <Event ...>
             const tagEndIndex = message.indexOf('>');
             if (tagEndIndex > -1) {
                 message = message.substring(tagEndIndex + 1);
             }
-            
-            // Quitar todos los tags internos y el tag de cierre
             message = message.replace(/<[^>]+>/g, ' ');
             message = message.replace(/\s+/g, ' ').trim();
 
@@ -149,25 +143,24 @@ function parseXML(content, fileName) {
                 date: dateMatch.date,
                 message: message,
                 source: fileName,
-                level: detectLogLevel(eventContent) // Detectar nivel del bloque
+                level: detectLogLevel(eventContent)
             });
         }
     }
     
-    console.log(`parseXML (Modo Regex Simple) encontró ${events.length} eventos.`);
     return events;
 }
 
-// Parsear texto plano
+// Parseo de Texto Plano (maneja logs multilínea)
 function parseText(content, fileName) {
     const events = [];
     const lines = content.split(/\r?\n/);
     let currentEvent = null;
 
-    // Regex Estricto: Nivel + \t (Tab)
+    // Patrón estricto para Windows/Syslog: Nivel + Tab + ...
     const levelRegex = /^(Información|Information|Advertencia|Warning|Error|Crítico|Critical|Detallado|Detailed)\t/i;
 
-    // Empezamos en 1 para saltar la cabecera
+    // La iteración comienza en 1 para ignorar líneas de encabezado comunes.
     for (let i = 1; i < lines.length; i++) {
         const line = lines[i];
 
@@ -176,7 +169,7 @@ function parseText(content, fileName) {
         const levelMatch = line.match(levelRegex);
         const dateMatch = findDateInText(line);
 
-        // Es un nuevo evento SÓLO SI tiene Nivel+Tab Y Fecha.
+        // Nuevo evento si: (1) tiene Nivel+Tab+... Y (2) tiene Fecha.
         if (levelMatch && dateMatch) { 
             
             if (currentEvent) {
@@ -186,7 +179,7 @@ function parseText(content, fileName) {
 
             const levelWord = levelMatch[1];
             
-            // El mensaje es todo lo que está DESPUÉS de la fecha
+            // El mensaje comienza después de la fecha
             const messageStartIndex = dateMatch.index + dateMatch.matchString.length;
             let message = line.substring(messageStartIndex);
             
@@ -200,23 +193,20 @@ function parseText(content, fileName) {
             };
 
         } else if (currentEvent) {
-            // Asumir que es una continuación del evento anterior.
+            // Continuación del evento anterior.
             currentEvent.message += '\n' + line.trim();
         }
     }
 
-    // Guardar el último evento
     if (currentEvent) {
         currentEvent.message = currentEvent.message.trim();
         events.push(currentEvent);
     }
 
-    console.log(`parseText (MODO ÍNDICE ESTRICTO) encontró ${events.length} eventos.`);
     return events;
 }
 
-
-// Buscar fecha en texto
+// Busca la primera fecha válida en un texto
 function findDateInText(text) {
     let earliestMatch = null;
     for (const pattern of datePatterns) {
@@ -240,7 +230,7 @@ function findDateInText(text) {
     return earliestMatch;
 }
 
-// Parsear fecha de diferentes formatos
+// Convierte una cadena de fecha en un objeto Date
 function parseDate(dateInput) {
     
     if (typeof dateInput === 'number') {
@@ -255,48 +245,32 @@ function parseDate(dateInput) {
         return null;
     }
 
-    // 1. Intentar formato D/M/YYYY HH:MM:SS (o MM/DD/YYYY)
+    // 1. D/M/YYYY HH:MM:SS (o MM/DD/YYYY)
     let match = dateInput.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})\b/);
     if (match) {
         let [, day, month, year, hour, minute, second] = match.map(Number);
         
         if (year > 1970 && year < 2050) {
-            // Intentar DD/MM (Formato ES/LATAM)
             if (month >= 1 && month <= 12) {
                 const d = new Date(year, month - 1, day, hour, minute, second);
-                if (!isNaN(d.getTime()) && d.getDate() === day) {
-                    return d;
-                }
+                if (!isNaN(d.getTime()) && d.getDate() === day) { return d; }
             }
-            // Intentar MM/DD (Formato US) (si DD/MM falló)
             if (day >= 1 && day <= 12) {
                 const d = new Date(year, day - 1, month, hour, minute, second);
-                if (!isNaN(d.getTime()) && d.getDate() === month) {
-                    return d;
-                }
+                if (!isNaN(d.getTime()) && d.getDate() === month) { return d; }
             }
         }
     }
 
-    // 2. Intentar formato ISO
-    match = dateInput.match(/(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})?)/);
+    // 2. Formato ISO o YYYY-MM-DD HH:MM:SS
+    match = dateInput.match(/(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})?)/) ||
+            dateInput.match(/(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/);
     if (match) {
         const d = new Date(match[1]);
-        if (!isNaN(d.getTime()) && d.getFullYear() > 1970 && d.getFullYear() < 2050) {
-            return d;
-        }
-    }
-    
-    // 3. Intentar formato YYYY-MM-DD HH:MM:SS
-    match = dateInput.match(/(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/);
-    if (match) {
-        const d = new Date(match[1]);
-        if (!isNaN(d.getTime()) && d.getFullYear() > 1970 && d.getFullYear() < 2050) {
-            return d;
-        }
+        if (!isNaN(d.getTime()) && d.getFullYear() > 1970 && d.getFullYear() < 2050) { return d; }
     }
 
-    // 4. Intentar formato "17 oct 2025, 15:03:51" (coma opcional)
+    // 3. Formato Day Month Year HH:MM:SS
     match = dateInput.match(/\b(\d{1,2})\s+([a-z]{3,4})\.?\s+(\d{4}),?\s+(\d{2}):(\d{2}):(\d{2})\b/i);
     if (match) {
         let [, day, monthStr, year, hour, minute, second] = match;
@@ -314,11 +288,9 @@ function parseDate(dateInput) {
 
         if (month !== undefined && year > 1970 && year < 2050) {
             const d = new Date(year, month, day, hour, minute, second);
-            if (!isNaN(d.getTime())) {
-                return d;
-            }
+            if (!isNaN(d.getTime())) { return d; }
         }
     }
 
-    return null; // No se pudo parsear
+    return null; 
 }

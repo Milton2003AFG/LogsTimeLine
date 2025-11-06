@@ -187,51 +187,44 @@ Cantarell, sans-serif;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
-/* --- Nuevos estilos para el botón de búsqueda --- */
+/* --- Estilos para la barra de búsqueda --- */
 
 .filter-group .search-wrapper {
     position: relative;
     display: flex;
 }
 
-/* El input ahora ocupa todo el espacio, pero deja espacio a la derecha */
 .filter-group .search-wrapper input {
     flex: 1;
-    padding-right: 50px; /* Espacio para el botón */
-    /* Asegurarse que el borde derecho no se redondee */
+    padding-right: 50px;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
-    /* Solucionar bug de borde al hacer foco */
     position: relative;
     z-index: 1;
 }
 
-/* El nuevo botón de búsqueda */
 .btn-search {
     width: 50px;
     padding: 10px;
-    border: 2px solid var(--primary-color); /* Borde primario */
-    border-left: none; /* Quitar borde izquierdo para unirlo al input */
+    border: 2px solid var(--primary-color);
+    border-left: none; 
     background: var(--primary-color);
     color: white;
-    font-size: 18px; /* Icono de lupa más grande */
+    font-size: 18px;
     cursor: pointer;
     
-    /* Alinear con el input */
-    border-radius: 0 8px 8px 0; /* Redondear esquina derecha */
+    border-radius: 0 8px 8px 0; 
     
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
     
-    /* Alinear verticalmente (por si la altura difiere) */
     height: 100%;
     align-self: center;
-    /* Solucionar bug de borde al hacer foco */
     position: relative;
     z-index: 2;
-    margin-left: -2px; /* Superponer sobre el borde del input */
+    margin-left: -2px; 
 }
 
 .btn-search:hover {
@@ -243,7 +236,7 @@ Cantarell, sans-serif;
 .filter-group .search-wrapper input:focus + .btn-search {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-    z-index: 0; /* Poner detrás del input al hacer foco */
+    z-index: 0; 
 }
 
 /* --- Fin Estilos de Búsqueda --- */
@@ -359,14 +352,14 @@ Cantarell, sans-serif;
 .event-card {
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    /* *** NUEVO: Borde izquierdo para color de nivel *** */
+    /* Borde izquierdo para color de nivel */
     border-left: 5px solid var(--border-color);
     border-radius: 10px;
     padding: 16px;
     transition: all 0.2s ease;
 }
 
-/* *** NUEVOS ESTILOS DE BORDE POR NIVEL *** */
+/* Estilos de Borde por Nivel */
 .event-card.event-level-default { border-left-color: var(--secondary-color); }
 .event-card.event-level-info { border-left-color: var(--info-color); }
 .event-card.event-level-success { border-left-color: var(--success-color); }
@@ -377,7 +370,6 @@ Cantarell, sans-serif;
 
 .event-card:hover {
     border-color: var(--primary-color);
-    /* Mantener el color del borde izquierdo al hacer hover */
     border-left-width: 5px;
     box-shadow: var(--shadow-lg);
     transform: translateX(4px);
@@ -419,7 +411,6 @@ Cantarell, sans-serif;
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
-    /* margin-left: 8px; <-- Quitado para que se alinee bien */
     margin-left: 0;
 }
 
@@ -494,15 +485,14 @@ Cantarell, sans-serif;
     }
 }
 
-/* --- Estilos para Tarjetas Plegables (Actualizado) --- */
+/* --- Estilos para Tarjetas Plegables --- */
 
 .event-card.event-card-collapsible {
     cursor: pointer;
 }
 
 .event-card.is-open {
-    /* Estilo para la tarjeta cuando está abierta */
-    background-color: #3e4c60; /* Un poco más claro que var(--bg-tertiary) */
+    background-color: #3e4c60; 
 }
 
 .event-summary {
@@ -520,7 +510,6 @@ Cantarell, sans-serif;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    /* El mensaje ocupa el espacio restante */
     flex: 1;
 }
 
@@ -565,6 +554,83 @@ Cantarell, sans-serif;
 
 /* --- Fin Estilos Plegables --- */
 
+/* --- Modal de Confirmación --- */
+.confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.confirm-overlay.hidden {
+    opacity: 0;
+    pointer-events: none; 
+}
+
+.confirm-modal {
+    background-color: #181c2e;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    max-width: 320px;
+    width: 90%;
+    font-size: 1.1rem;
+    color: #ffffff;
+    transform: scale(1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.confirm-overlay.hidden .confirm-modal {
+    transform: scale(0.9);
+}
+
+.confirm-buttons {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+
+.confirm-buttons button {
+    border: none;
+    padding: 10px 16px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.confirm-buttons button:active {
+    transform: scale(0.98);
+}
+
+.btn-confirm-yes {
+    background-color: #ef4444; 
+    color: white;
+}
+.btn-confirm-yes:hover {
+    background-color: #dc2626;
+}
+
+.btn-confirm-no {
+    background-color: #fbfcffc7; 
+    color: #374151;
+}
+.btn-confirm-no:hover {
+    background-color: #ffffff;
+}
+/* --- Fin Modal de Confirmación --- */
+
+
 @media (max-width: 768px) {
     .header {
         flex-direction: column;
@@ -596,13 +662,12 @@ Cantarell, sans-serif;
         left: 7px;
     }
 
-    /* En móvil, el resumen de mensaje puede ser más corto */
     .event-summary-message {
-        /* Permitir que se rompa en varias líneas en móvil si es necesario */
         white-space: normal;
     }
 }
 
+/* Estilos de Scrollbar */
 ::-webkit-scrollbar {
     width: 12px;
     height: 12px;
@@ -620,78 +685,4 @@ Cantarell, sans-serif;
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--secondary-hover);
-}
-
-.confirm-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    opacity: 1;
-    transition: opacity 0.2s ease-in-out;
-}
-
-.confirm-overlay.hidden {
-    opacity: 0;
-    pointer-events: none; /* No se puede hacer clic cuando está oculto */
-}
-
-.confirm-modal {
-    background-color: #181c2e;
-    padding: 24px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    text-align: center;
-    max-width: 320px;
-    width: 90%;
-    font-size: 1.1rem;
-    color: #ffffff;
-    transform: scale(1.2);
-    transition: transform 0.2s ease-in-out;
-}
-
-.confirm-overlay.hidden .confirm-modal {
-    transform: scale(0.9);
-}
-
-.confirm-buttons {
-    margin-top: 20px;
-    display: flex;
-    justify-content: space-around;
-    gap: 10px;
-}
-
-.confirm-buttons button {
-    border: none;
-    padding: 10px 16px;
-    border-radius: 5px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
-}
-
-.confirm-buttons button:active {
-    transform: scale(0.98);
-}
-
-.btn-confirm-yes {
-    background-color: #ef4444; /* Rojo (Peligro) */
-    color: white;
-}
-.btn-confirm-yes:hover {
-    background-color: #dc2626;
-}
-
-.btn-confirm-no {
-    background-color: #fbfcffc7; /* Gris claro */
-    color: #374151;
-}
-.btn-confirm-no:hover {
-    background-color: #ffffff;
 }
