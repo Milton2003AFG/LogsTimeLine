@@ -1,3 +1,4 @@
+// Estado de la aplicación
 const appState = {
     events: [],
     loadedFiles: [],
@@ -5,6 +6,10 @@ const appState = {
     currentSort: 'asc',
     currentLevel: 'tod'
 };
+
+// NOTA: Todas las funciones de parseo (parseLogContent, parseDate, etc.)
+// y las constantes (datePatterns, logLevelPatterns)
+// ahora se encuentran en 'parsers.js'
 
 // Inicializar la aplicación
 async function init() {
@@ -14,10 +19,12 @@ async function init() {
             return;
         }
         await Neutralino.init();
+        console.log('Neutralino inicializado correctamente');
         setupEventListeners();
         updateStats();
     } catch (error) {
         console.error('Error al inicializar:', error);
+        console.error('Error al inicializar la aplicación: ' + error.message);
     }
 }
 
@@ -31,10 +38,14 @@ function setupEventListeners() {
     const levelSelect = document.getElementById('sortLevel');
 
     if (loadBtn) {
-        loadBtn.addEventListener('click', openFileDialog);
+        loadBtn.addEventListener('click', async () => {
+            console.log('Botón de cargar presionado');
+            await openFileDialog();
+        });
     }
     if (clearBtn) { clearBtn.addEventListener('click', clearAll); }
     
+    // Lógica de búsqueda (Click y Enter)
     if (searchInput && searchButton) {
         searchButton.addEventListener('click', triggerSearch);
         searchInput.addEventListener('keydown', (e) => {
@@ -59,6 +70,7 @@ function setupEventListeners() {
 
 // Abrir diálogo de selección de archivo
 async function openFileDialog() {
+    console.log('Abriendo diálogo de archivo...');
     try {
         if (!Neutralino || !Neutralino.os) {
             throw new Error('Neutralino.os no está disponible');
@@ -71,17 +83,24 @@ async function openFileDialog() {
             ]
         });
 
+        console.log('Archivos seleccionados:', selection);
+
         if (selection && selection.length > 0) {
             appState.currentFilter = '';
             const searchInput = document.getElementById('searchInput');
-            if (searchInput) { searchInput.value = ''; }
+            if (searchInput) {
+                searchInput.value = '';
+            }
 
             for (const filePath of selection) {
                 await loadFile(filePath);
             }
+        } else {
+            console.log('No se seleccionó ningún archivo');
         }
     } catch (error) {
         console.error('Error al abrir el diálogo:', error);
+        console.error('Error al seleccionar el archivo:\n\n' + error.message);
     }
 }
 
@@ -99,7 +118,7 @@ async function loadFile(filePath) {
         const content = await Neutralino.filesystem.readFile(filePath);
         const extension = fileName.split('.').pop().toLowerCase();
 
-        // parseLogContent se encuentra en parsers.js
+        // Llamada a la función que ahora está en parsers.js
         const events = parseLogContent(content, extension, fileName);
 
         if (events.length === 0) {
@@ -111,8 +130,10 @@ async function loadFile(filePath) {
         
         renderTimeline();
         updateStats();
+        console.log(`Cargados ${events.length} eventos desde ${fileName}.`);
     } catch (error) {
         console.error('Error al cargar el archivo:', error);
+        console.error('Error al cargar el archivo: ' + error.message);
     } finally {
         showLoading(false);
     }
@@ -124,13 +145,11 @@ function renderTimeline() {
     const emptyState = document.getElementById('emptyState');
 
     const filteredEvents = appState.events.filter(event => {
-        // Filtrado por texto (búsqueda)
         if (appState.currentFilter) {
             if (!event.message.toLowerCase().includes(appState.currentFilter.toLowerCase())) {
                 return false;
             }
         }
-        // Filtrado por nivel de log
         if (appState.currentLevel && appState.currentLevel !== 'tod') {
         const levelMap = {
                 adv: 'warning', cri: 'critical', err: 'error',
@@ -143,7 +162,7 @@ function renderTimeline() {
                     return false;
                 }
             } else if (mapped) {
-                if (event.level !== mapped) return false;
+                 if (event.level !== mapped) return false;
             }
         }
         return true;
@@ -159,7 +178,7 @@ function renderTimeline() {
     const sortedEvents = [...filteredEvents].sort((a, b) => {
         const dateA = a.date ? a.date.getTime() : 0;
         const dateB = b.date ? b.date.getTime() : 0;
-        if (dateA === 0 && dateB !== 0) return 1; 
+        if (dateA === 0 && dateB !== 0) return 1;
         if (dateA !== 0 && dateB === 0) return -1;
         return appState.currentSort === 'asc' ? dateA - dateB : dateB - dateA;
     });
@@ -175,7 +194,7 @@ function renderTimeline() {
     emptyState.classList.add('hidden');
 }
 
-// Crea la tarjeta de evento (resumen y detalle plegable)
+// Crear elemento de evento
 function createEventElement(event) {
     const eventDiv = document.createElement('div');
     eventDiv.className = 'timeline-event';
@@ -190,15 +209,18 @@ function createEventElement(event) {
     const summaryView = document.createElement('div');
     summaryView.className = 'event-summary';
 
-    // Badge de Nivel
-    const levelBadge = document.createElement('span');
-    levelBadge.className = `log-level ${event.level || 'log-level-none'}`;
-    levelBadge.textContent = event.level || '';
-    if (!event.level) { 
+    if (event.level) {
+        const levelBadge = document.createElement('span');
+        levelBadge.className = `log-level ${event.level}`;
+        levelBadge.textContent = event.level;
+        summaryView.appendChild(levelBadge);
+    } else {
+        const levelBadge = document.createElement('span');
+        levelBadge.className = `log-level log-level-none`;
         levelBadge.innerHTML = '&nbsp;';
         levelBadge.style.visibility = "hidden";
+        summaryView.appendChild(levelBadge);
     }
-    summaryView.appendChild(levelBadge);
 
     const summaryMessage = document.createElement('span');
     summaryMessage.className = 'event-summary-message';
@@ -248,7 +270,7 @@ function createEventElement(event) {
 }
 
 
-// Formatea la fecha para la UI
+// Formatear fecha
 function formatDate(date) {
     if (!date || isNaN(date.getTime())) {
         return "Fecha Desconocida"; 
@@ -260,7 +282,7 @@ function formatDate(date) {
     return date.toLocaleString('es-ES', options);
 }
 
-// Escapa el texto para evitar XSS
+// Escapar HTML
 function escapeHtml(text) {
     if (typeof text !== 'string') return '';
     const div = document.createElement('div');
@@ -268,7 +290,7 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Actualiza los contadores y el rango de fechas en la UI
+// Actualizar estadísticas
 function updateStats() {
     document.getElementById('filesCount').textContent = appState.loadedFiles.length;
     document.getElementById('eventsCount').textContent = appState.events.length;
@@ -292,35 +314,36 @@ function updateStats() {
     }
 }
 
-// Activa el filtro de búsqueda por texto
+// Manejar búsqueda
 function triggerSearch() {
     const searchInput = document.getElementById('searchInput');
     appState.currentFilter = searchInput.value;
     renderTimeline();
 }
 
-// Maneja el cambio de orden (asc/desc)
+// Manejar ordenamiento
 function handleSort(e) {
-    appState.currentSort = e.target.value; 
+    appState.currentSort = e.target.value; // Corregí un error aquí, era e.targe.value
     renderTimeline();
 }
 
-// Maneja el filtro por nivel de log
+// Manejar filtro por nivel
 function handleLevelFilter(e) {
     appState.currentLevel = e.target.value;
     renderTimeline();
 }
 
-// Muestra el modal de confirmación antes de borrar
+// Limpiar todo (AHORA MUESTRA LA CONFIRMACIÓN)
 function clearAll() {
     if (appState.events.length === 0) return;
     
+    // Mostrar el modal en lugar de borrar directamente
     showConfirmationModal('¿Estás seguro de que deseas borrar todos los eventos y archivos?', () => {
-        performClearAll(); 
+        performClearAll(); // Esta es la nueva función que realmente borra
     });
 }
 
-// Ejecuta el borrado real del estado
+// (NUEVA FUNCIÓN) Lógica de borrado real
 function performClearAll() {
     appState.events = [];
     appState.loadedFiles = [];
@@ -332,7 +355,8 @@ function performClearAll() {
     updateStats();
 }
 
-// Oculta el modal de confirmación
+
+// (NUEVA FUNCIÓN) Oculta el modal de confirmación
 function hideConfirmationModal() {
     const overlay = document.getElementById('confirmOverlay');
     if (overlay) {
@@ -340,7 +364,7 @@ function hideConfirmationModal() {
     }
 }
 
-// Muestra el modal de confirmación
+// (NUEVA FUNCIÓN) Muestra el modal de confirmación
 function showConfirmationModal(message, onConfirm) {
     const overlay = document.getElementById('confirmOverlay');
     const msgElement = document.getElementById('confirmMessage');
@@ -348,7 +372,8 @@ function showConfirmationModal(message, onConfirm) {
     const noBtn = document.getElementById('confirmBtnNo');
 
     if (!overlay || !msgElement || !yesBtn || !noBtn) {
-        console.error('Elementos del modal de confirmación no encontrados.');
+        console.error('Elementos del modal de confirmación no encontrados. Revise index.html');
+        // Fallback: si el modal no existe, ejecutar la acción (comportamiento antiguo)
         onConfirm();
         return;
     }
@@ -356,26 +381,39 @@ function showConfirmationModal(message, onConfirm) {
     msgElement.textContent = message;
     overlay.classList.remove('hidden');
 
-    // Clonar para eliminar listeners antiguos
+    // --- Limpiar listeners antiguos ---
+    // Clonamos los botones para eliminar cualquier 'event listener' anterior
     const newYesBtn = yesBtn.cloneNode(true);
     yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
     
     const newNoBtn = noBtn.cloneNode(true);
     noBtn.parentNode.replaceChild(newNoBtn, noBtn);
+    // --- Fin de la limpieza ---
 
     // Añadir nuevos listeners
     newYesBtn.addEventListener('click', () => {
         hideConfirmationModal();
-        onConfirm();
+        onConfirm(); // Ejecutar la acción de borrado
     });
 
     newNoBtn.addEventListener('click', () => {
-        hideConfirmationModal();
+        hideConfirmationModal(); // Simplemente cerrar el modal
     });
 }
 
 
-// Inicializar la aplicación cuando el DOM esté listo
+// Mostrar/ocultar loading
+function showLoading(show) {
+    const overlay = document.getElementById('loadingOverlay');
+    if (!overlay) return;
+    if (show) {
+        overlay.classList.add('active');
+    } else {
+        overlay.classList.remove('active');
+    }
+}
+
+// Iniciar la aplicación cuando el DOM esté listo
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
