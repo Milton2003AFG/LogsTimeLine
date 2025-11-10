@@ -4,7 +4,8 @@ const appState = {
     loadedFiles: [],
     currentFilter: '',
     currentSort: 'asc',
-    currentLevel: 'tod'
+    currentLevel: 'tod',
+    currentId: ''
 };
 
 // Inicializar la aplicación
@@ -32,6 +33,7 @@ function setupEventListeners() {
     const searchButton = document.getElementById('searchButton');
     const sortOrder = document.getElementById('sortOrder');
     const levelSelect = document.getElementById('sortLevel');
+    const sortId = document.getElementById('sortId');
 
     if (loadBtn) {
         loadBtn.addEventListener('click', async () => {
@@ -54,6 +56,7 @@ function setupEventListeners() {
 
     if (sortOrder) { sortOrder.addEventListener('change', handleSort); }
     if (levelSelect) { levelSelect.addEventListener('change', handleLevelFilter); }
+    if (sortId) { sortId.addEventListener('change', handleSortId); }
 
     try {
         Neutralino.events.on('windowClose', () => {
@@ -114,7 +117,7 @@ async function loadFile(filePath) {
         const content = await Neutralino.filesystem.readFile(filePath);
         const extension = fileName.split('.').pop().toLowerCase();
 
-        // Llamada a la función que ahora está en parsers.js
+        // Llamada a la función que está en parsers.js
         const events = parseLogContent(content, extension, fileName);
 
         if (events.length === 0) {
@@ -147,7 +150,7 @@ function renderTimeline() {
             }
         }
         if (appState.currentLevel && appState.currentLevel !== 'tod') {
-        const levelMap = {
+            const levelMap = {
                 adv: 'warning', cri: 'critical', err: 'error',
                 inf: 'info', det: 'detailed' 
             };
@@ -171,7 +174,26 @@ function renderTimeline() {
         return;
     }
 
+    // LÓGICA DE ORDENAMIENTO 
     const sortedEvents = [...filteredEvents].sort((a, b) => {
+        // Si hay ordenamiento por ID activo
+        if (appState.currentId !== '') {
+            const idA = a.id !== null && a.id !== undefined ? a.id : -1;
+            const idB = b.id !== null && b.id !== undefined ? b.id : -1;
+            
+            // Eventos sin ID van al final
+            if (idA === -1 && idB !== -1) return 1;
+            if (idA !== -1 && idB === -1) return -1;
+            
+            // Ordenar por ID
+            if (appState.currentId === 'asc') {
+                return idA - idB;
+            } else { // desc
+                return idB - idA;
+            }
+        }
+        
+        // Si no hay orden por ID, ordenar por fecha 
         const dateA = a.date ? a.date.getTime() : 0;
         const dateB = b.date ? b.date.getTime() : 0;
         if (dateA === 0 && dateB !== 0) return 1;
@@ -319,7 +341,7 @@ function triggerSearch() {
 
 // Manejar ordenamiento
 function handleSort(e) {
-    appState.currentSort = e.target.value; // Corregí un error aquí, era e.targe.value
+    appState.currentSort = e.target.value; 
     renderTimeline();
 }
 
@@ -329,13 +351,19 @@ function handleLevelFilter(e) {
     renderTimeline();
 }
 
-// Limpiar todo (AHORA MUESTRA LA CONFIRMACIÓN)
+// Manejar filtro por ID
+function handleSortId(e) {
+    appState.currentId = e.target.value;
+    renderTimeline();
+}
+
+// Limpiar todo 
 function clearAll() {
     if (appState.events.length === 0) return;
     
     // Mostrar el modal en lugar de borrar directamente
     showConfirmationModal('¿Estás seguro de que deseas borrar todos los eventos y archivos?', () => {
-        performClearAll(); // Esta es la nueva función que realmente borra
+        performClearAll(); // Función que realmente borra
     });
 }
 

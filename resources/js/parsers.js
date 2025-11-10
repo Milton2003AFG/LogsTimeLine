@@ -24,9 +24,13 @@ const logLevelPatterns = {
     success: /success\b|ok\b|complete\b|done\b/i
 };
 
-/**
- * Detecta el nivel de log, priorizando el inicio de la línea.
- */
+//Patrones para detectar los ID de logs
+const logIdPatterns= {
+    xml: /<EventID(?:\s+[^>]*)?>(\d+)<\/EventID>/,
+    txt: /^[^\t]+\t[^\t]+\t[^\t]+\t(\d+)\t/m
+};
+
+// Detecta el nivel de log, priorizando el inicio de la línea.
 function detectLogLevel(message) {
     const anchoredPatterns = {
         critical: /^Crítico\b|^Critical\b/i,
@@ -128,6 +132,14 @@ function parseXML(content, fileName) {
     let match;
     while ((match = eventRegex.exec(content)) !== null) {
         const eventContent = match[0];
+        const idMatch = eventContent.match(logIdPatterns.xml);
+
+        console.log('XML - ID Match:', idMatch);
+        if (idMatch) {
+            console.log('XML - ID capturado (índice 0):', idMatch[0]); 
+            console.log('XML - ID capturado (índice 1):', idMatch[1]);
+        }
+
         const dateMatch = findDateInText(eventContent);
         
         if (dateMatch) {
@@ -140,6 +152,7 @@ function parseXML(content, fileName) {
             message = message.replace(/\s+/g, ' ').trim();
 
             events.push({
+                id: idMatch ? parseInt(idMatch[1]) : null,
                 date: dateMatch.date,
                 message: message,
                 source: fileName,
@@ -167,6 +180,7 @@ function parseText(content, fileName) {
         
         const levelMatch = line.match(levelRegex);
         const dateMatch = findDateInText(line);
+        const idMatch = line.match(logIdPatterns.txt);
 
         if (levelMatch && dateMatch) { 
             
@@ -184,6 +198,7 @@ function parseText(content, fileName) {
             const normalizedLevel = detectLogLevel(levelWord); 
             
             currentEvent = {
+                id: idMatch ? parseInt(idMatch[1]) : null,
                 date: dateMatch.date,
                 message: message.trim(),
                 source: fileName,
