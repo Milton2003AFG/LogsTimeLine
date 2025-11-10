@@ -74,7 +74,7 @@ async function openFileDialog() {
         const selection = await Neutralino.os.showOpenDialog('Selecciona uno o más archivos de log', {
             multiSelections: true,
             filters: [
-                { name: 'Archivos de Log', extensions: ['txt', 'log', 'xml', 'json', 'evtx'] },
+                { name: 'txt, log, xml, json', extensions: ['txt', 'log', 'xml', 'json'] },
                 { name: 'Todos los archivos', extensions: ['*'] }
             ]
         });
