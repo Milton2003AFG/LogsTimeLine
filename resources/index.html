@@ -18,6 +18,9 @@
                 <button id="clearAllBtn" class="btn btn-secondary">
                     🗑️ Limpiar Todo
                 </button>
+                <button id="translate" class="btn-translate">
+                    <img src="img/translate.png" alt="traducir">
+                </button>
             </div>
         </header>
 
@@ -39,23 +42,23 @@
 
         <!-- Filters Section -->
         <div class="filters-section">
-        <div class="filter-group">
-            <label for="searchInput">🔍 Buscar en mensajes:</label>
-            <div class="search-wrapper">
-                <input type="text" id="searchInput" placeholder="Filtrar por texto...">
-                <button id="searchButton" class="btn-search">🔍</button>
+            <div class="filter-group">
+                <label for="searchInput">🔍 Buscar en mensajes:</label>
+                <div class="search-wrapper">
+                    <input type="text" id="searchInput" placeholder="Filtrar por texto...">
+                    <button id="searchButton" class="btn-search">🔍</button>
+                </div>
             </div>
-        </div>
-        <div class="filter-group">
-                <label for="sortLevel">Ordenar por Nivel de Evento:</label>
-                <select id="sortLevel">
-                    <option value="tod">Todos</option>
-                    <option value="adv">Advertencia</option>
-                    <option value="cri">Crítico</option>
-                    <option value="err">Error</option>
-                    <option value="det">Detallado</option>
-                    <option value="inf">Información</option>
-                </select>
+            <div class="filter-group">
+                    <label for="sortLevel">Ordenar por Nivel de Evento:</label>
+                    <select id="sortLevel">
+                        <option value="tod">Todos</option>
+                        <option value="adv">Advertencia</option>
+                        <option value="cri">Crítico</option>
+                        <option value="err">Error</option>
+                        <option value="det">Detallado</option>
+                        <option value="inf">Información</option>
+                    </select>
             </div>
             <div class="filter-group">
                 <label for="sortOrder">Ordenar por Fecha:</label>
@@ -105,6 +108,7 @@
     <script src="js/neutralino.js"></script>
     <script src="js/parsers.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/translate.js"></script>
     
     <!-- Script para verificar que Neutralino está cargado -->
     <script>
