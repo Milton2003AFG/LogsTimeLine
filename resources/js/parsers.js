@@ -1,4 +1,5 @@
-// Patrones de expresión regular para detectar fechas (ordenados por especificidad)
+// Estos patrones de RegEx buscan fechas. El orden es importante
+// porque van del más específico al más general.
 const datePatterns = [
     // DD/MM/YYYY HH:MM:SS (o MM/DD/YYYY)
     /\b(\d{1,2}\/\d{1,2}\/\d{4}\s+\d{2}:\d{2}:\d{2})\b/,
@@ -14,7 +15,7 @@ const datePatterns = [
     /\b(\d{1,2}\s+[a-z]{3,4}\.?\s+\d{4},?\s+\d{2}:\d{2}:\d{2})\b/i
 ];
 
-// Patrones para detectar niveles de log (anclados al inicio o en etiquetas XML)
+// Patrones para detectar niveles de log. Buscan al inicio de la línea o en etiquetas XML.
 const logLevelPatterns = {
     critical: /^Crítico\b|^Critical\b|<Level>(1|Crítico|Critical)<\/Level>/i,
     error: /^Error\b|<Level>(2|Error)<\/Level>/i,
@@ -30,9 +31,8 @@ const logIdPatterns = {
     txt: /^[^\t]+\t[^\t]+\t[^\t]+\t(\d+)\t/m
 };
 
-/**
- * Detecta el nivel de log, priorizando el inicio de la línea.
- */
+// Intenta detectar el nivel de log. Damos prioridad a las palabras clave
+// que están al inicio de la línea (ej. "Error ...")
 function detectLogLevel(message) {
     const anchoredPatterns = {
         critical: /^Crítico\b|^Critical\b/i,
@@ -48,6 +48,7 @@ function detectLogLevel(message) {
         }
     }
 
+    // Si no lo encontramos al inicio, buscamos en cualquier parte (ej. en XML)
     const fallbackPatterns = {
         critical: /<Level>(1|Crítico|Critical)<\/Level>/i,
         error: /<Level>(2|Error)<\/Level>/i,
@@ -66,10 +67,8 @@ function detectLogLevel(message) {
     return null;
 }
 
-/**
- * Extrae el Event ID del mensaje usando múltiples patrones
- * Busca patrones como: "Service 1531 Ninguno", "EventID: 4624", etc.
- */
+// Extraer el Event ID es complicado, así que intentamos varios patrones.
+// Buscamos cosas como "EventID: 4624", "Service 1531", etc.
 function extractEventId(message) {
     // Patrón 1: Microsoft-Windows-XXX 1234 (el número después del nombre del servicio)
     let match = message.match(/Microsoft-Windows-[^\s]+\s+(\d{3,5})\s+/i);
@@ -91,15 +90,14 @@ function extractEventId(message) {
     match = message.match(/<EventID>(\d{3,5})<\/EventID>/i);
     if (match) return match[1];
     
-    // Patrón 6: Cualquier secuencia de 3-5 dígitos después de un espacio
-    // (menos agresivo, solo si no hay otros patrones)
+    // Patrón 6: Cualquier secuencia de 4 dígitos después de un espacio
+    // (este es menos agresivo)
     match = message.match(/\s(\d{4})\s/);
     if (match) return match[1];
     
     return null;
 }
 
-// Función principal para dirigir el parseo
 function parseLogContent(content, extension, fileName) {
     const events = [];
     try {
@@ -109,10 +107,12 @@ function parseLogContent(content, extension, fileName) {
         } else if (extension === 'xml') {
             events.push(...parseXML(content, fileName));
         } else {
+            // Asumimos que todo lo demás es texto plano
             events.push(...parseText(content, fileName));
         }
     } catch (error) {
         console.error('Error al parsear el contenido:', error);
+        // Si falla el parseo (ej. un JSON malformado), lo intentamos como texto plano
         if (extension !== 'txt' && extension !== 'log') {
             events.push(...parseText(content, fileName));
         }
@@ -120,13 +120,13 @@ function parseLogContent(content, extension, fileName) {
     return events;
 }
 
-// Parseo de objetos JSON 
 function parseJSON(data, fileName) {
     const events = [];
     const extractFromObject = (obj, path = '') => {
         if (Array.isArray(obj)) {
             obj.forEach((item, index) => extractFromObject(item, `${path}[${index}]`));
         } else if (typeof obj === 'object' && obj !== null) {
+            // Buscamos campos de fecha comunes
             const dateFields = ['timestamp', 'time', 'date', 'datetime', 'created', 'occurred'];
             let dateValue = null;
             for (const field of dateFields) {
@@ -150,10 +150,11 @@ function parseJSON(data, fileName) {
                         source: fileName,
                         level: level,
                         eventId: eventId,
-                        id: eventId ? parseInt(eventId) : null  // Mantener compatibilidad con id numérico
+                        id: eventId ? parseInt(eventId) : null  // Guardamos el ID numérico para ordenar
                     });
                 }
             }
+            // Recursión para objetos anidados
             for (const key in obj) {
                 if (obj.hasOwnProperty(key)) {
                     extractFromObject(obj[key], path ? `${path}.${key}` : key);
@@ -165,7 +166,6 @@ function parseJSON(data, fileName) {
     return events;
 }
 
-// Parseo de XML 
 function parseXML(content, fileName) {
     const events = [];
     const eventRegex = /<Event([\s\S]*?)<\/Event>/gis;
@@ -180,6 +180,7 @@ function parseXML(content, fileName) {
         const dateMatch = findDateInText(eventContent);
         
         if (dateMatch) {
+            // Limpiamos el mensaje de tags
             let message = eventContent.replace(dateMatch.matchString, '');
             const tagEndIndex = message.indexOf('>');
             if (tagEndIndex > -1) {
@@ -197,7 +198,7 @@ function parseXML(content, fileName) {
                 source: fileName,
                 level: detectLogLevel(eventContent),
                 eventId: eventId,
-                id: eventId ? parseInt(eventId) : null  // Mantener compatibilidad con id numérico
+                id: eventId ? parseInt(eventId) : null  // Guardamos el ID numérico para ordenar
             });
         }
     }
@@ -205,7 +206,7 @@ function parseXML(content, fileName) {
     return events;
 }
 
-// Parseo de Texto Plano (maneja logs multilínea)
+// Parsea texto plano. La parte díficil es que intenta agrupar logs multilínea.
 function parseText(content, fileName) {
     const events = [];
     const lines = content.split(/\r?\n/);
@@ -225,9 +226,11 @@ function parseText(content, fileName) {
         // Intentar extraer ID con patrón específico TXT primero
         const idMatch = line.match(logIdPatterns.txt);
 
+        // Si la línea tiene un Nivel y una Fecha, la consideramos el inicio de un nuevo evento.
         if (levelMatch && dateMatch) { 
             
             if (currentEvent) {
+                // Antes de guardar el evento anterior, lo limpiamos
                 currentEvent.message = currentEvent.message.trim();
                 // Intentar extraer eventId si aún no lo tiene
                 if (!currentEvent.eventId) {
@@ -254,11 +257,11 @@ function parseText(content, fileName) {
                 source: fileName,
                 level: normalizedLevel,
                 eventId: eventId,
-                id: eventId ? parseInt(eventId) : null  // Mantener compatibilidad con id numérico
+                id: eventId ? parseInt(eventId) : null  // Guardamos el ID numérico para ordenar
             };
 
         } else if (currentEvent) {
-            // Continuación del evento anterior
+            // Si no es un nuevo evento, es la continuación del evento anterior
             currentEvent.message += '\n' + line.trim();
             
             // Si aún no tenemos eventId, intentar extraerlo de esta línea
@@ -272,6 +275,7 @@ function parseText(content, fileName) {
         }
     }
 
+    // No olvidar guardar el último evento que estaba en proceso
     if (currentEvent) {
         currentEvent.message = currentEvent.message.trim();
         // Intentar extraer eventId antes de guardar el último evento
@@ -285,7 +289,6 @@ function parseText(content, fileName) {
     return events;
 }
 
-// Busca la primera fecha válida en un texto
 function findDateInText(text) {
     let earliestMatch = null;
     for (const pattern of datePatterns) {
@@ -296,6 +299,7 @@ function findDateInText(text) {
             
             if (date) { 
                 const matchIndex = match.index;
+                // Nos quedamos con la fecha que aparezca *primero* en la línea
                 if (earliestMatch === null || matchIndex < earliestMatch.index) {
                     earliestMatch = { 
                         date: date,
@@ -309,9 +313,11 @@ function findDateInText(text) {
     return earliestMatch;
 }
 
-// Convierte una cadena de fecha en un objeto Date
+// Esta es la función que intenta convertir cualquier string de fecha en un objeto Date.
+// Es compleja porque los logs tienen mil formatos distintos.
 function parseDate(dateInput) {
     
+    // A veces las fechas vienen como timestamps numéricos
     if (typeof dateInput === 'number') {
         const d = new Date(dateInput);
         if (!isNaN(d.getTime()) && d.getFullYear() > 1970 && d.getFullYear() < 2050) {
@@ -325,15 +331,18 @@ function parseDate(dateInput) {
     }
 
     // 1. D/M/YYYY HH:MM:SS (o MM/DD/YYYY)
+    // Esta parte es delicada por la ambigüedad D/M vs M/D
     let match = dateInput.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})\b/);
     if (match) {
         let [, day, month, year, hour, minute, second] = match.map(Number);
         
         if (year > 1970 && year < 2050) {
+            // Primero intentamos M/D/YYYY
             if (month >= 1 && month <= 12) {
                 const d = new Date(year, month - 1, day, hour, minute, second);
                 if (!isNaN(d.getTime()) && d.getDate() === day) { return d; }
             }
+            // Si falla, intentamos D/M/YYYY
             if (day >= 1 && day <= 12) {
                 const d = new Date(year, day - 1, month, hour, minute, second);
                 if (!isNaN(d.getTime()) && d.getDate() === month) { return d; }
@@ -349,7 +358,7 @@ function parseDate(dateInput) {
         if (!isNaN(d.getTime()) && d.getFullYear() > 1970 && d.getFullYear() < 2050) { return d; }
     }
 
-    // 3. Formato Day Month Year HH:MM:SS
+    // 3. Formato Day Month Year HH:MM:SS (ej. 17 Oct 2025...)
     match = dateInput.match(/\b(\d{1,2})\s+([a-z]{3,4})\.?\s+(\d{4}),?\s+(\d{2}):(\d{2}):(\d{2})\b/i);
     if (match) {
         let [, day, monthStr, year, hour, minute, second] = match;
@@ -371,5 +380,5 @@ function parseDate(dateInput) {
         }
     }
 
-    return null; 
+    return null; // Si nada funcionó, nos rendimos
 }

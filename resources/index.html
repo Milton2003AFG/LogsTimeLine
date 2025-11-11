@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -9,9 +8,10 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
+        
         <header class="header">
             <h1>📊 Visor de Línea de Tiempo de Logs de Windows</h1>
+            <br>
             <div class="header-actions">
                 <button id="loadFileBtn" class="btn btn-primary">
                     📁 Cargar Archivo de Log
@@ -19,8 +19,8 @@
                 <button id="exportJsonBtn" class="btn btn-primary">
                     💾 Exportar a JSON
                 </button>
-                <button id="helpBtn" class="btn btn-info">
-                    ℹ️ Comandos de Búsqueda
+                <button id="helpBtn" class="btn btn-primary">
+                    ❓ Comandos de Búsqueda
                 </button>
                 <button id="clearAllBtn" class="btn btn-secondary">
                     🗑️ Limpiar Todo
@@ -31,7 +31,7 @@
             </div>
         </header>
 
-        <!-- Stats Section -->
+        
         <div class="stats-bar">
             <div class="stat-item">
                 <span class="stat-label">Archivos cargados:</span>
@@ -51,12 +51,12 @@
             </div>
         </div>
 
-        <!-- Filters Section -->
+        
         <div class="filters-section">
             <div class="filter-group filter-group-wide">
-                <label for="searchInput">🔍 Buscar (usa comandos: ID:1000, MSG:texto, NIVEL:error):</label>
+                <label for="searchInput">🔍 Buscar (ID, MSG, NIVEL):</label>
                 <div class="search-wrapper">
-                    <input type="text" id="searchInput" placeholder="Escribe aquí o usa comandos...">
+                    <input type="text" id="searchInput" placeholder="Escribe aquí o usa comandos">
                     <button id="searchButton" class="btn-search">🔎</button>
                 </div>
             </div>
@@ -89,9 +89,8 @@
             </div>
         </div>
 
-        <!-- Main Content: Sidebar + Timeline -->
         <div class="main-content">
-            <!-- Files Sidebar -->
+            
             <aside id="filesSidebar" class="files-sidebar hidden">
                 <div class="sidebar-header">
                     <h3>📂 Archivos</h3>
@@ -101,11 +100,10 @@
                     </div>
                 </div>
                 <div id="filesList" class="files-list">
-                    <!-- Los checkboxes se generarán dinámicamente aquí -->
-                </div>
+                    </div>
             </aside>
 
-            <!-- Timeline Section -->
+            
             <div class="timeline-wrapper">
                 <div class="timeline-container">
                     <div id="emptyState" class="empty-state">
@@ -118,14 +116,13 @@
             </div>
         </div>
 
-        <!-- Loading Overlay -->
         <div id="loadingOverlay" class="loading-overlay">
             <div class="spinner"></div>
             <p>Procesando archivo...</p>
         </div>
     </div>
 
-    <!-- Help Modal -->
+    
     <div id="helpOverlay" class="confirm-overlay hidden">
         <div class="help-modal">
             <h2>📖 Comandos de Búsqueda</h2>
@@ -160,7 +157,7 @@
         </div>
     </div>
 
-    <!-- Confirmation Modal -->
+    
     <div id="confirmOverlay" class="confirm-overlay hidden">
         <div class="confirm-modal">
             <p id="confirmMessage">¿Estás seguro?</p>
@@ -171,7 +168,7 @@
         </div>
     </div>
 
-    <!-- Notification Modal -->
+    
     <div id="notificationOverlay" class="confirm-overlay hidden">
         <div class="confirm-modal">
             <p id="notificationMessage">Mensaje</p>
@@ -186,7 +183,6 @@
     <script src="js/main.js"></script>
     <script src="js/translate.js"></script>
     
-    <!-- Script para verificar que Neutralino está cargado -->
     <script>
         window.addEventListener('load', function() {
             if (typeof Neutralino === 'undefined') {
