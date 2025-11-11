@@ -67,6 +67,7 @@ Cantarell, sans-serif;
 .header-actions {
     display: flex;
     gap: 12px;
+    flex-wrap: wrap;
 }
 
 .btn {
@@ -89,6 +90,17 @@ Cantarell, sans-serif;
 
 .btn-primary:hover {
     background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-info {
+    background: #0ea5e9;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #0284c7;
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
@@ -157,6 +169,11 @@ Cantarell, sans-serif;
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.filter-group-wide {
+    flex: 2;
+    min-width: 350px;
 }
 
 .filter-group label {
@@ -622,6 +639,107 @@ Cantarell, sans-serif;
     background-color: #ffffff;
 }
 
+/* Help Modal Styles */
+.help-modal {
+    background-color: #1e293b;
+    padding: 32px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 90%;
+    color: #f1f5f9;
+    text-align: left;
+}
+
+.help-modal h2 {
+    font-size: 24px;
+    margin-bottom: 16px;
+    color: #0ea5e9;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.help-modal p {
+    font-size: 16px;
+    margin-bottom: 20px;
+    color: var(--text-secondary);
+}
+
+.help-commands {
+    background: var(--bg-primary);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.help-command {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    border-left: 4px solid #0ea5e9;
+}
+
+.help-command strong {
+    font-size: 16px;
+    color: #0ea5e9;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.help-command span {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.help-examples {
+    background: var(--bg-primary);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.help-examples h3 {
+    font-size: 18px;
+    margin-bottom: 12px;
+    color: #10b981;
+}
+
+.help-examples ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.help-examples li {
+    font-size: 14px;
+    color: var(--text-primary);
+    padding: 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.help-examples code {
+    background: var(--bg-tertiary);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    color: #0ea5e9;
+}
+
+.help-modal button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+}
+
 @media (max-width: 768px) {
     .header {
         flex-direction: column;
@@ -655,6 +773,11 @@ Cantarell, sans-serif;
 
     .event-summary-message {
         white-space: normal;
+    }
+    
+    .help-modal {
+        padding: 20px;
+        max-width: 95%;
     }
 }
 

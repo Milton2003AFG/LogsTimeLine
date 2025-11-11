@@ -5,8 +5,12 @@ const appState = {
     currentFilter: '',
     currentSort: 'asc',
     currentLevel: 'tod',
-    currentId: '',        // Para ordenar por ID
-    currentEventId: ''    // Para filtrar por Event ID
+    currentId: '',
+    // Nuevo: almacenar comandos parseados
+    searchCommand: {
+        type: null,  // 'ID', 'MSG', 'NIVEL', o null para búsqueda normal
+        value: ''
+    }
 };
 
 // Inicializar la aplicación
@@ -31,13 +35,12 @@ function setupEventListeners() {
     const loadBtn = document.getElementById('loadFileBtn');
     const clearBtn = document.getElementById('clearAllBtn');
     const exportBtn = document.getElementById('exportJsonBtn');
+    const helpBtn = document.getElementById('helpBtn');
     const searchInput = document.getElementById('searchInput');
     const searchButton = document.getElementById('searchButton');
     const sortOrder = document.getElementById('sortOrder');
     const levelSelect = document.getElementById('sortLevel');
     const sortId = document.getElementById('sortId');
-    const eventIdInput = document.getElementById('eventIdInput');
-    const eventIdButton = document.getElementById('eventIdButton');
 
     if (loadBtn) {
         loadBtn.addEventListener('click', async () => {
@@ -53,25 +56,18 @@ function setupEventListeners() {
     if (exportBtn) {
         exportBtn.addEventListener('click', exportToJson);
     }
+
+    if (helpBtn) {
+        helpBtn.addEventListener('click', showHelpModal);
+    }
     
-    // Búsqueda de texto
+    // Búsqueda unificada
     if (searchInput && searchButton) {
         searchButton.addEventListener('click', triggerSearch);
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 triggerSearch();
-            }
-        });
-    }
-
-    // Filtro por Event ID
-    if (eventIdInput && eventIdButton) {
-        eventIdButton.addEventListener('click', triggerEventIdFilter);
-        eventIdInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                triggerEventIdFilter();
             }
         });
     }
@@ -88,6 +84,12 @@ function setupEventListeners() {
         sortId.addEventListener('change', handleSortId); 
     }
 
+    // Listener para cerrar modal de ayuda
+    const helpBtnClose = document.getElementById('helpBtnClose');
+    if (helpBtnClose) {
+        helpBtnClose.addEventListener('click', hideHelpModal);
+    }
+
     try {
         Neutralino.events.on('windowClose', () => {
             Neutralino.app.exit();
@@ -97,24 +99,83 @@ function setupEventListeners() {
     }
 }
 
+// Parsear comando de búsqueda
+function parseSearchCommand(searchText) {
+    const trimmed = searchText.trim();
+    
+    // Comando ID:
+    const idMatch = trimmed.match(/^ID:\s*(\d+)/i);
+    if (idMatch) {
+        return { type: 'ID', value: idMatch[1] };
+    }
+    
+    // Comando MSG:
+    const msgMatch = trimmed.match(/^MSG:\s*(.+)/i);
+    if (msgMatch) {
+        return { type: 'MSG', value: msgMatch[1].trim() };
+    }
+    
+    // Comando NIVEL:
+    const nivelMatch = trimmed.match(/^NIVEL:\s*(\w+)/i);
+    if (nivelMatch) {
+        return { type: 'NIVEL', value: nivelMatch[1].toLowerCase() };
+    }
+    
+    // Sin comando - búsqueda normal en mensaje
+    return { type: null, value: trimmed };
+}
+
 // Función auxiliar para obtener eventos filtrados (reutilizable)
 function getFilteredEvents() {
     return appState.events.filter(event => {
-        // Filtro de búsqueda por texto
-        if (appState.currentFilter) {
-            if (!event.message.toLowerCase().includes(appState.currentFilter.toLowerCase())) {
-                return false;
+        // Filtro por comando de búsqueda
+        if (appState.searchCommand.value) {
+            switch (appState.searchCommand.type) {
+                case 'ID':
+                    // Buscar por Event ID
+                    if (!event.eventId || !event.eventId.toString().includes(appState.searchCommand.value)) {
+                        return false;
+                    }
+                    break;
+                
+                case 'MSG':
+                    // Buscar en mensaje
+                    if (!event.message.toLowerCase().includes(appState.searchCommand.value.toLowerCase())) {
+                        return false;
+                    }
+                    break;
+                
+                case 'NIVEL':
+                    // Filtrar por nivel
+                    const nivelMap = {
+                        'error': 'error',
+                        'warning': 'warning',
+                        'advertencia': 'warning',
+                        'info': 'info',
+                        'información': 'info',
+                        'informacion': 'info',
+                        'critical': 'critical',
+                        'crítico': 'critical',
+                        'critico': 'critical',
+                        'detailed': 'detailed',
+                        'detallado': 'detailed'
+                    };
+                    const targetLevel = nivelMap[appState.searchCommand.value];
+                    if (!targetLevel || event.level !== targetLevel) {
+                        return false;
+                    }
+                    break;
+                
+                default:
+                    // Búsqueda normal (sin comando) - buscar en mensaje
+                    if (!event.message.toLowerCase().includes(appState.searchCommand.value.toLowerCase())) {
+                        return false;
+                    }
+                    break;
             }
         }
         
-        // Filtro por Event ID
-        if (appState.currentEventId) {
-            if (!event.eventId || !event.eventId.toString().includes(appState.currentEventId)) {
-                return false;
-            }
-        }
-        
-        // Filtro por nivel
+        // Filtro por nivel (del select)
         if (appState.currentLevel && appState.currentLevel !== 'tod') {
             const levelMap = {
                 adv: 'warning', cri: 'critical', err: 'error',
@@ -152,7 +213,7 @@ async function openFileDialog() {
         console.log('Archivos seleccionados:', selection);
 
         if (selection && selection.length > 0) {
-            appState.currentFilter = '';
+            appState.searchCommand = { type: null, value: '' };
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 searchInput.value = '';
@@ -365,8 +426,9 @@ async function exportToJson() {
             exportDate: new Date().toISOString(),
             totalEvents: filteredEvents.length,
             filters: {
-                searchText: appState.currentFilter || 'ninguno',
-                eventId: appState.currentEventId || 'ninguno',
+                searchCommand: appState.searchCommand.type ? 
+                    `${appState.searchCommand.type}:${appState.searchCommand.value}` : 
+                    appState.searchCommand.value || 'ninguno',
                 level: appState.currentLevel !== 'tod' ? appState.currentLevel : 'todos',
                 sortOrder: appState.currentSort,
                 sortId: appState.currentId || 'ninguno'
@@ -470,17 +532,15 @@ function updateStats() {
     }
 }
 
-// Manejar búsqueda de texto
+// Manejar búsqueda unificada
 function triggerSearch() {
     const searchInput = document.getElementById('searchInput');
-    appState.currentFilter = searchInput.value;
-    renderTimeline();
-}
-
-// Manejar filtro por Event ID
-function triggerEventIdFilter() {
-    const eventIdInput = document.getElementById('eventIdInput');
-    appState.currentEventId = eventIdInput.value.trim();
+    const searchText = searchInput.value;
+    
+    // Parsear comando
+    appState.searchCommand = parseSearchCommand(searchText);
+    
+    console.log('Comando parseado:', appState.searchCommand);
     renderTimeline();
 }
 
@@ -516,19 +576,31 @@ function clearAll() {
 function performClearAll() {
     appState.events = [];
     appState.loadedFiles = [];
-    appState.currentFilter = '';
-    appState.currentEventId = '';
+    appState.searchCommand = { type: null, value: '' };
     appState.currentId = '';
     
     if (document.getElementById('searchInput')) {
         document.getElementById('searchInput').value = '';
     }
-    if (document.getElementById('eventIdInput')) {
-        document.getElementById('eventIdInput').value = '';
-    }
     
     renderTimeline();
     updateStats();
+}
+
+// Mostrar modal de ayuda
+function showHelpModal() {
+    const overlay = document.getElementById('helpOverlay');
+    if (overlay) {
+        overlay.classList.remove('hidden');
+    }
+}
+
+// Ocultar modal de ayuda
+function hideHelpModal() {
+    const overlay = document.getElementById('helpOverlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+    }
 }
 
 // Mostrar modal de notificación

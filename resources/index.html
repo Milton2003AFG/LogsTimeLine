@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -18,6 +17,9 @@
                 </button>
                 <button id="exportJsonBtn" class="btn btn-primary">
                     💾 Exportar a JSON
+                </button>
+                <button id="helpBtn" class="btn btn-primary">
+                    ❓ Comandos de Búsqueda
                 </button>
                 <button id="clearAllBtn" class="btn btn-secondary">
                     🗑️ Limpiar Todo
@@ -43,20 +45,11 @@
 
         <!-- Filters Section -->
         <div class="filters-section">
-            <div class="filter-group">
-                <label for="searchInput">🔍 Buscar en mensajes:</label>
+            <div class="filter-group filter-group-wide">
+                <label for="searchInput">🔍 Barra de busquedas (ID, MSG, NIVEL, o texto):</label>
                 <div class="search-wrapper">
-                    <input type="text" id="searchInput" placeholder="Filtrar por texto...">
-                    <button id="searchButton" class="btn-search">🔍</button>
-                </div>
-            </div>
-            
-            <!-- Filtro por Event ID -->
-            <div class="filter-group">
-                <label for="eventIdInput">🔢 Filtrar por Event ID:</label>
-                <div class="search-wrapper">
-                    <input type="text" id="eventIdInput" placeholder="Ej: 1000, 4624...">
-                    <button id="eventIdButton" class="btn-search">🔍</button>
+                    <input type="text" id="searchInput" placeholder="Escribe aquí o usa comandos...">
+                    <button id="searchButton" class="btn-search">🔎</button>
                 </div>
             </div>
             
@@ -82,8 +75,8 @@
                 <label for="sortId">Ordenar por ID:</label>
                 <select id="sortId">
                     <option value="">Sin filtro</option>
-                    <option value="asc">De menor a mayor</option>
-                    <option value="desc">De mayor a menor</option>
+                    <option value="asc">Ascendente</option>
+                    <option value="desc">Descendente</option>
                 </select>
             </div>
         </div>
@@ -102,6 +95,41 @@
         <div id="loadingOverlay" class="loading-overlay">
             <div class="spinner"></div>
             <p>Procesando archivo...</p>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpOverlay" class="confirm-overlay hidden">
+        <div class="help-modal">
+            <h2>📖 Comandos de Búsqueda</h2>
+            <p>Puedes usar estos comandos en la barra de búsqueda:</p>
+            <div class="help-commands">
+                <div class="help-command">
+                    <strong>ID:1000</strong>
+                    <span>Buscar por Event ID específico</span>
+                </div>
+                <div class="help-command">
+                    <strong>MSG:error conexión</strong>
+                    <span>Buscar texto en mensajes</span>
+                </div>
+                <div class="help-command">
+                    <strong>NIVEL:error</strong>
+                    <span>Filtrar por nivel (error, warning, info, critical, detailed)</span>
+                </div>
+                <div class="help-command">
+                    <strong>texto normal</strong>
+                    <span>Sin comando, busca en todos los mensajes</span>
+                </div>
+            </div>
+            <div class="help-examples">
+                <h3>Ejemplos:</h3>
+                <ul>
+                    <li><code>ID:4624</code> - Eventos con ID 4624</li>
+                    <li><code>MSG:failed login</code> - Mensajes con "failed login"</li>
+                    <li><code>NIVEL:critical</code> - Solo eventos críticos</li>
+                </ul>
+            </div>
+            <button id="helpBtnClose" class="btn-confirm-no">Cerrar</button>
         </div>
     </div>
 
