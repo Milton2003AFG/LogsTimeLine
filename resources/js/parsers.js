@@ -24,6 +24,12 @@ const logLevelPatterns = {
     success: /success\b|ok\b|complete\b|done\b/i
 };
 
+// Patrones específicos para ID en formatos estructurados
+const logIdPatterns = {
+    xml: /<EventID(?:\s+[^>]*)?>(\d+)<\/EventID>/,
+    txt: /^[^\t]+\t[^\t]+\t[^\t]+\t(\d+)\t/m
+};
+
 /**
  * Detecta el nivel de log, priorizando el inicio de la línea.
  */
@@ -61,7 +67,7 @@ function detectLogLevel(message) {
 }
 
 /**
- * Extrae el Event ID del mensaje
+ * Extrae el Event ID del mensaje usando múltiples patrones
  * Busca patrones como: "Service 1531 Ninguno", "EventID: 4624", etc.
  */
 function extractEventId(message) {
@@ -143,7 +149,8 @@ function parseJSON(data, fileName) {
                         message: message,
                         source: fileName,
                         level: level,
-                        eventId: eventId
+                        eventId: eventId,
+                        id: eventId ? parseInt(eventId) : null  // Mantener compatibilidad con id numérico
                     });
                 }
             }
@@ -166,6 +173,10 @@ function parseXML(content, fileName) {
     let match;
     while ((match = eventRegex.exec(content)) !== null) {
         const eventContent = match[0];
+        
+        // Intentar extraer ID con patrón específico XML primero
+        const idMatch = eventContent.match(logIdPatterns.xml);
+        
         const dateMatch = findDateInText(eventContent);
         
         if (dateMatch) {
@@ -177,15 +188,16 @@ function parseXML(content, fileName) {
             message = message.replace(/<[^>]+>/g, ' ');
             message = message.replace(/\s+/g, ' ').trim();
 
-            // Extraer EventID del XML o del mensaje procesado
-            const eventId = extractEventId(eventContent) || extractEventId(message);
+            // Priorizar el ID extraído por el patrón específico, luego usar extractEventId como fallback
+            const eventId = (idMatch ? idMatch[1] : null) || extractEventId(eventContent) || extractEventId(message);
 
             events.push({
                 date: dateMatch.date,
                 message: message,
                 source: fileName,
                 level: detectLogLevel(eventContent),
-                eventId: eventId
+                eventId: eventId,
+                id: eventId ? parseInt(eventId) : null  // Mantener compatibilidad con id numérico
             });
         }
     }
@@ -209,14 +221,18 @@ function parseText(content, fileName) {
         
         const levelMatch = line.match(levelRegex);
         const dateMatch = findDateInText(line);
+        
+        // Intentar extraer ID con patrón específico TXT primero
+        const idMatch = line.match(logIdPatterns.txt);
 
         if (levelMatch && dateMatch) { 
             
             if (currentEvent) {
                 currentEvent.message = currentEvent.message.trim();
-                // Extraer eventId antes de guardar el evento
+                // Intentar extraer eventId si aún no lo tiene
                 if (!currentEvent.eventId) {
                     currentEvent.eventId = extractEventId(currentEvent.message);
+                    currentEvent.id = currentEvent.eventId ? parseInt(currentEvent.eventId) : null;
                 }
                 events.push(currentEvent);
             }
@@ -228,14 +244,17 @@ function parseText(content, fileName) {
             let message = line.substring(messageStartIndex);
             
             const normalizedLevel = detectLogLevel(levelWord);
-            const eventId = extractEventId(line);
+            
+            // Priorizar el ID extraído por el patrón específico, luego usar extractEventId como fallback
+            const eventId = (idMatch ? idMatch[1] : null) || extractEventId(line);
             
             currentEvent = {
                 date: dateMatch.date,
                 message: message.trim(),
                 source: fileName,
                 level: normalizedLevel,
-                eventId: eventId
+                eventId: eventId,
+                id: eventId ? parseInt(eventId) : null  // Mantener compatibilidad con id numérico
             };
 
         } else if (currentEvent) {
@@ -247,6 +266,7 @@ function parseText(content, fileName) {
                 const eventId = extractEventId(line);
                 if (eventId) {
                     currentEvent.eventId = eventId;
+                    currentEvent.id = parseInt(eventId);
                 }
             }
         }
@@ -254,9 +274,10 @@ function parseText(content, fileName) {
 
     if (currentEvent) {
         currentEvent.message = currentEvent.message.trim();
-        // Extraer eventId antes de guardar el último evento
+        // Intentar extraer eventId antes de guardar el último evento
         if (!currentEvent.eventId) {
             currentEvent.eventId = extractEventId(currentEvent.message);
+            currentEvent.id = currentEvent.eventId ? parseInt(currentEvent.eventId) : null;
         }
         events.push(currentEvent);
     }

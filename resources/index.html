@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -11,17 +12,17 @@
         <!-- Header -->
         <header class="header">
             <h1>📊 Visor de Línea de Tiempo de Logs de Windows</h1>
-                <div class="header-actions">
-                    <button id="loadFileBtn" class="btn btn-primary">
-                        📂 Cargar Archivo de Log
-                    </button>
-                    <button id="exportJsonBtn" class="btn btn-primary">
-                        💾 Exportar a JSON
-                    </button>
-                    <button id="clearAllBtn" class="btn btn-secondary">
-                        🗑️ Limpiar Todo
-                    </button>
-                </div>
+            <div class="header-actions">
+                <button id="loadFileBtn" class="btn btn-primary">
+                    📁 Cargar Archivo de Log
+                </button>
+                <button id="exportJsonBtn" class="btn btn-primary">
+                    💾 Exportar a JSON
+                </button>
+                <button id="clearAllBtn" class="btn btn-secondary">
+                    🗑️ Limpiar Todo
+                </button>
+            </div>
         </header>
 
         <!-- Stats Section -->
@@ -41,43 +42,51 @@
         </div>
 
         <!-- Filters Section -->
-<div class="filters-section">
-    <div class="filter-group">
-        <label for="searchInput">🔍 Buscar en mensajes:</label>
-        <div class="search-wrapper">
-            <input type="text" id="searchInput" placeholder="Filtrar por texto...">
-            <button id="searchButton" class="btn-search">🔍</button>
+        <div class="filters-section">
+            <div class="filter-group">
+                <label for="searchInput">🔍 Buscar en mensajes:</label>
+                <div class="search-wrapper">
+                    <input type="text" id="searchInput" placeholder="Filtrar por texto...">
+                    <button id="searchButton" class="btn-search">🔍</button>
+                </div>
+            </div>
+            
+            <!-- Filtro por Event ID -->
+            <div class="filter-group">
+                <label for="eventIdInput">🔢 Filtrar por Event ID:</label>
+                <div class="search-wrapper">
+                    <input type="text" id="eventIdInput" placeholder="Ej: 1000, 4624...">
+                    <button id="eventIdButton" class="btn-search">🔍</button>
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <label for="sortLevel">Ordenar por Nivel de Evento:</label>
+                <select id="sortLevel">
+                    <option value="tod">Todos</option>
+                    <option value="adv">Advertencia</option>
+                    <option value="cri">Crítico</option>
+                    <option value="err">Error</option>
+                    <option value="det">Detallado</option>
+                    <option value="inf">Información</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="sortOrder">Ordenar por Fecha:</label>
+                <select id="sortOrder">
+                    <option value="asc">Más antiguo primero</option>
+                    <option value="desc">Más reciente primero</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="sortId">Ordenar por ID:</label>
+                <select id="sortId">
+                    <option value="">Sin filtro</option>
+                    <option value="asc">De menor a mayor</option>
+                    <option value="desc">De mayor a menor</option>
+                </select>
+            </div>
         </div>
-    </div>
-    
-    <!-- NUEVO: Filtro por Event ID -->
-    <div class="filter-group">
-        <label for="eventIdInput">🔢 Filtrar por Event ID:</label>
-        <div class="search-wrapper">
-            <input type="text" id="eventIdInput" placeholder="Ej: 1000, 4624...">
-            <button id="eventIdButton" class="btn-search">🔍</button>
-        </div>
-    </div>
-    
-    <div class="filter-group">
-        <label for="sortLevel">Ordenar por Nivel de Evento:</label>
-        <select id="sortLevel">
-            <option value="tod">Todos</option>
-            <option value="adv">Advertencia</option>
-            <option value="cri">Crítico</option>
-            <option value="err">Error</option>
-            <option value="det">Detallado</option>
-            <option value="inf">Información</option>
-        </select>
-    </div>
-    <div class="filter-group">
-        <label for="sortOrder">Ordenar:</label>
-        <select id="sortOrder">
-            <option value="asc">Más antiguo primero</option>
-            <option value="desc">Más reciente primero</option>
-        </select>
-    </div>
-</div>
 
         <!-- Timeline Section -->
         <div class="timeline-container">
@@ -96,7 +105,7 @@
         </div>
     </div>
 
-    <!-- Confirmation Modal (Reemplaza alert/confirm) -->
+    <!-- Confirmation Modal -->
     <div id="confirmOverlay" class="confirm-overlay hidden">
         <div class="confirm-modal">
             <p id="confirmMessage">¿Estás seguro?</p>
@@ -107,11 +116,13 @@
         </div>
     </div>
 
+    <!-- Notification Modal -->
     <div id="notificationOverlay" class="confirm-overlay hidden">
         <div class="confirm-modal">
             <p id="notificationMessage">Mensaje</p>
             <div class="confirm-buttons">
                 <button id="notificationBtnOk" class="btn-confirm-no">Aceptar</button>
+            </div>
         </div>
     </div>
     
