@@ -677,3 +677,12 @@ Cantarell, sans-serif;
 ::-webkit-scrollbar-thumb:hover {
     background: var(--secondary-hover);
 }
+
+#notificationMessage {
+    white-space: pre-line;
+    
+    overflow-wrap: break-word;
+    word-wrap: break-word; 
+
+    margin-bottom: 20px;
+}

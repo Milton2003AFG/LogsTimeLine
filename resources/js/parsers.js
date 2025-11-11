@@ -60,6 +60,39 @@ function detectLogLevel(message) {
     return null;
 }
 
+/**
+ * Extrae el Event ID del mensaje
+ * Busca patrones como: "Service 1531 Ninguno", "EventID: 4624", etc.
+ */
+function extractEventId(message) {
+    // Patrón 1: Microsoft-Windows-XXX 1234 (el número después del nombre del servicio)
+    let match = message.match(/Microsoft-Windows-[^\s]+\s+(\d{3,5})\s+/i);
+    if (match) return match[1];
+    
+    // Patrón 2: Service XXX 1234
+    match = message.match(/Service\s+[^\s]+\s+(\d{3,5})\s+/i);
+    if (match) return match[1];
+    
+    // Patrón 3: EventID: 1234 o Event ID: 1234
+    match = message.match(/Event\s*ID[:\s]+(\d{3,5})\b/i);
+    if (match) return match[1];
+    
+    // Patrón 4: ID: 1234
+    match = message.match(/\bID[:\s]+(\d{3,5})\b/i);
+    if (match) return match[1];
+    
+    // Patrón 5: En XML <EventID>1234</EventID>
+    match = message.match(/<EventID>(\d{3,5})<\/EventID>/i);
+    if (match) return match[1];
+    
+    // Patrón 6: Cualquier secuencia de 3-5 dígitos después de un espacio
+    // (menos agresivo, solo si no hay otros patrones)
+    match = message.match(/\s(\d{4})\s/);
+    if (match) return match[1];
+    
+    return null;
+}
+
 // Función principal para dirigir el parseo
 function parseLogContent(content, extension, fileName) {
     const events = [];
@@ -101,11 +134,16 @@ function parseJSON(data, fileName) {
                 if (date) {
                     const message = obj.message || obj.msg || obj.description || obj.text || JSON.stringify(obj);
                     const level = detectLogLevel(message);
+                    
+                    // Extraer eventId de múltiples fuentes posibles
+                    const eventId = obj.eventId || obj.EventId || obj.event_id || obj.id || extractEventId(message);
+                    
                     events.push({
                         date: date,
                         message: message,
                         source: fileName,
-                        level: level
+                        level: level,
+                        eventId: eventId
                     });
                 }
             }
@@ -139,11 +177,15 @@ function parseXML(content, fileName) {
             message = message.replace(/<[^>]+>/g, ' ');
             message = message.replace(/\s+/g, ' ').trim();
 
+            // Extraer EventID del XML o del mensaje procesado
+            const eventId = extractEventId(eventContent) || extractEventId(message);
+
             events.push({
                 date: dateMatch.date,
                 message: message,
                 source: fileName,
-                level: detectLogLevel(eventContent)
+                level: detectLogLevel(eventContent),
+                eventId: eventId
             });
         }
     }
@@ -172,6 +214,10 @@ function parseText(content, fileName) {
             
             if (currentEvent) {
                 currentEvent.message = currentEvent.message.trim();
+                // Extraer eventId antes de guardar el evento
+                if (!currentEvent.eventId) {
+                    currentEvent.eventId = extractEventId(currentEvent.message);
+                }
                 events.push(currentEvent);
             }
 
@@ -181,23 +227,37 @@ function parseText(content, fileName) {
             const messageStartIndex = dateMatch.index + dateMatch.matchString.length;
             let message = line.substring(messageStartIndex);
             
-            const normalizedLevel = detectLogLevel(levelWord); 
+            const normalizedLevel = detectLogLevel(levelWord);
+            const eventId = extractEventId(line);
             
             currentEvent = {
                 date: dateMatch.date,
                 message: message.trim(),
                 source: fileName,
-                level: normalizedLevel 
+                level: normalizedLevel,
+                eventId: eventId
             };
 
         } else if (currentEvent) {
             // Continuación del evento anterior
             currentEvent.message += '\n' + line.trim();
+            
+            // Si aún no tenemos eventId, intentar extraerlo de esta línea
+            if (!currentEvent.eventId) {
+                const eventId = extractEventId(line);
+                if (eventId) {
+                    currentEvent.eventId = eventId;
+                }
+            }
         }
     }
 
     if (currentEvent) {
         currentEvent.message = currentEvent.message.trim();
+        // Extraer eventId antes de guardar el último evento
+        if (!currentEvent.eventId) {
+            currentEvent.eventId = extractEventId(currentEvent.message);
+        }
         events.push(currentEvent);
     }
 

@@ -4,7 +4,8 @@ const appState = {
     loadedFiles: [],
     currentFilter: '',
     currentSort: 'asc',
-    currentLevel: 'tod'
+    currentLevel: 'tod',
+    currentEventId: '',
 };
 
 // Inicializar la aplicación
@@ -24,24 +25,39 @@ async function init() {
     }
 }
 
-// Configurar event listeners
+// Configurar event listeners (VERSIÓN CORREGIDA Y CONSOLIDADA)
 function setupEventListeners() {
+    // 1. Definir TODOS los elementos
     const loadBtn = document.getElementById('loadFileBtn');
     const clearBtn = document.getElementById('clearAllBtn');
+    const exportBtn = document.getElementById('exportJsonBtn'); // NUEVO
     const searchInput = document.getElementById('searchInput');
     const searchButton = document.getElementById('searchButton');
     const sortOrder = document.getElementById('sortOrder');
     const levelSelect = document.getElementById('sortLevel');
+    const eventIdInput = document.getElementById('eventIdInput');
+    const eventIdButton = document.getElementById('eventIdButton'); 
 
+    // 2. Asignar TODOS los listeners
+    
+    // Listener para Cargar Archivo (AHORA DENTRO DE LA FUNCIÓN)
     if (loadBtn) {
         loadBtn.addEventListener('click', async () => {
             console.log('Botón de cargar presionado');
             await openFileDialog();
         });
     }
-    if (clearBtn) { clearBtn.addEventListener('click', clearAll); }
+
+    // Listener para Limpiar Todo (AHORA DENTRO DE LA FUNCIÓN)
+    if (clearBtn) { 
+        clearBtn.addEventListener('click', clearAll); 
+    }
+
+    if (exportBtn) {
+    exportBtn.addEventListener('click', exportToJson);
+    }
     
-    // Lógica de búsqueda (Click y Enter)
+    // Listeners para Búsqueda de Texto (AHORA DENTRO DE LA FUNCIÓN)
     if (searchInput && searchButton) {
         searchButton.addEventListener('click', triggerSearch);
         searchInput.addEventListener('keydown', (e) => {
@@ -52,9 +68,26 @@ function setupEventListeners() {
         });
     }
 
-    if (sortOrder) { sortOrder.addEventListener('change', handleSort); }
-    if (levelSelect) { levelSelect.addEventListener('change', handleLevelFilter); }
+    // NUEVO: Event listeners para el filtro de EventID
+    if (eventIdInput && eventIdButton) {
+        eventIdButton.addEventListener('click', triggerEventIdFilter);
+        eventIdInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                triggerEventIdFilter();
+            }
+        });
+    }
 
+    // Listeners para Selects de Orden y Nivel
+    if (sortOrder) { 
+        sortOrder.addEventListener('change', handleSort); 
+    }
+    if (levelSelect) { 
+        levelSelect.addEventListener('change', handleLevelFilter); 
+    }
+
+    // Listener de Neutralino
     try {
         Neutralino.events.on('windowClose', () => {
             Neutralino.app.exit();
@@ -62,6 +95,134 @@ function setupEventListeners() {
     } catch (error) {
         console.error('Error al configurar eventos de Neutralino:', error);
     }
+}
+
+
+// NUEVA FUNCIÓN: Manejar filtro por EventID
+function triggerEventIdFilter() {
+    const eventIdInput = document.getElementById('eventIdInput');
+    appState.currentEventId = eventIdInput.value.trim();
+    renderTimeline();
+}
+async function exportToJson() {
+    if (appState.events.length === 0) {
+        showNotificationModal('No hay eventos para exportar. Carga archivos primero.');
+        return;
+    }
+
+    try {
+        showLoading(true);
+
+        // Obtener eventos filtrados (igual que en renderTimeline)
+        const filteredEvents = getFilteredEvents();
+
+        if (filteredEvents.length === 0) {
+            showLoading(false);
+            showNotificationModal('No hay eventos que coincidan con los filtros actuales.');
+            return;
+        }
+
+        // Preparar datos para exportar
+        const exportData = {
+            exportDate: new Date().toISOString(),
+            totalEvents: filteredEvents.length,
+            filters: {
+                searchText: appState.currentFilter || 'ninguno',
+                eventId: appState.currentEventId || 'ninguno',
+                level: appState.currentLevel !== 'tod' ? appState.currentLevel : 'todos',
+                sortOrder: appState.currentSort
+            },
+            sourceFiles: appState.loadedFiles,
+            events: filteredEvents.map(event => ({
+                date: event.date ? event.date.toISOString() : null,
+                dateFormatted: formatDate(event.date),
+                message: event.message,
+                source: event.source,
+                level: event.level || 'sin nivel',
+                eventId: event.eventId || 'sin ID'
+            }))
+        };
+
+        // Convertir a JSON con formato legible
+        const jsonContent = JSON.stringify(exportData, null, 2);
+
+        // Generar nombre de archivo con timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+        const defaultFileName = `timeline-export-${timestamp}.json`;
+
+        // Mostrar diálogo para guardar archivo
+        const savePath = await Neutralino.os.showSaveDialog('Guardar línea de tiempo como JSON', {
+            defaultPath: defaultFileName,
+            filters: [
+                { name: 'JSON', extensions: ['json'] },
+                { name: 'Todos los archivos', extensions: ['*'] }
+            ]
+        });
+
+        if (savePath) {
+            
+            // Comprueba si la ruta termina en .json y la corrige si no.
+            const finalPath = savePath.toLowerCase().endsWith('.json') ? savePath : savePath + '.json';
+
+            // Guardar el archivo (USA FINALPATH)
+            await Neutralino.filesystem.writeFile(finalPath, jsonContent);
+            
+            showLoading(false);
+            // USA FINALPATH
+            console.log(`Exportación exitosa: ${filteredEvents.length} eventos guardados en ${finalPath}`);
+            
+            // Mostrar notificación al usuario (USA FINALPATH)
+            showNotificationModal(
+                `✅ Exportación exitosa!\n\n${filteredEvents.length} eventos guardados en:\n${finalPath}`
+            );
+
+        } else {
+            showLoading(false);
+            console.log('Exportación cancelada por el usuario');
+        }
+
+    } catch (error) {
+        showLoading(false);
+        console.error('Error al exportar:', error);
+        showNotificationModal(`❌ Error al exportar:\n\n${error.message}`);
+    }
+}
+
+// NUEVA FUNCIÓN AUXILIAR: Obtener eventos filtrados (reutilizable)
+function getFilteredEvents() {
+    return appState.events.filter(event => {
+        // Filtro de búsqueda por texto
+        if (appState.currentFilter) {
+            if (!event.message.toLowerCase().includes(appState.currentFilter.toLowerCase())) {
+                return false;
+            }
+        }
+        
+        // Filtro por EventID
+        if (appState.currentEventId) {
+            if (!event.eventId || !event.eventId.toString().includes(appState.currentEventId)) {
+                return false;
+            }
+        }
+        
+        // Filtro por nivel
+        if (appState.currentLevel && appState.currentLevel !== 'tod') {
+            const levelMap = {
+                adv: 'warning', cri: 'critical', err: 'error',
+                inf: 'info', det: 'detailed' 
+            };
+            const mapped = levelMap[appState.currentLevel];
+
+            if (appState.currentLevel === 'det') {
+                if (event.level !== 'detailed' && event.level !== null) {
+                    return false;
+                }
+            } else if (mapped) {
+                 if (event.level !== mapped) return false;
+            }
+        }
+        return true;
+    });
 }
 
 // Abrir diálogo de selección de archivo
@@ -140,30 +301,10 @@ function renderTimeline() {
     const timeline = document.getElementById('timeline');
     const emptyState = document.getElementById('emptyState');
 
-    const filteredEvents = appState.events.filter(event => {
-        if (appState.currentFilter) {
-            if (!event.message.toLowerCase().includes(appState.currentFilter.toLowerCase())) {
-                return false;
-            }
-        }
-        if (appState.currentLevel && appState.currentLevel !== 'tod') {
-        const levelMap = {
-                adv: 'warning', cri: 'critical', err: 'error',
-                inf: 'info', det: 'detailed' 
-            };
-            const mapped = levelMap[appState.currentLevel];
+    // 1. OBTENER EVENTOS (¡Esta es la única línea de filtro que necesitas!)
+    const filteredEvents = getFilteredEvents(); 
 
-            if (appState.currentLevel === 'det') {
-                if (event.level !== 'detailed' && event.level !== null) {
-                    return false;
-                }
-            } else if (mapped) {
-                 if (event.level !== mapped) return false;
-            }
-        }
-        return true;
-    });
-
+    // 2. MOSTRAR ESTADO VACÍO SI NO HAY NADA
     if (filteredEvents.length === 0) {
         timeline.classList.remove('visible');
         emptyState.classList.remove('hidden');
@@ -171,6 +312,7 @@ function renderTimeline() {
         return;
     }
 
+    // 3. ORDENAR EVENTOS
     const sortedEvents = [...filteredEvents].sort((a, b) => {
         const dateA = a.date ? a.date.getTime() : 0;
         const dateB = b.date ? b.date.getTime() : 0;
@@ -179,9 +321,11 @@ function renderTimeline() {
         return appState.currentSort === 'asc' ? dateA - dateB : dateB - dateA;
     });
 
+    // 4. RENDERIZAR
     timeline.innerHTML = '';
     sortedEvents.forEach(event => {
-        const eventElement = createEventElement(event);
+        // Esta línea ahora funcionará cuando agregues la función del Paso 2
+        const eventElement = createEventElement(event); 
         timeline.appendChild(eventElement);
     });
 
@@ -190,7 +334,18 @@ function renderTimeline() {
     emptyState.classList.add('hidden');
 }
 
-// Crear elemento de evento
+// Formatear fecha
+function formatDate(date) {
+    if (!date || isNaN(date.getTime())) {
+        return "Fecha Desconocida"; 
+    }
+    const options = {
+        year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+    };
+    return date.toLocaleString('es-ES', options);
+}
+
 function createEventElement(event) {
     const eventDiv = document.createElement('div');
     eventDiv.className = 'timeline-event';
@@ -241,6 +396,14 @@ function createEventElement(event) {
     source.innerHTML = `📄 <strong>Archivo:</strong> ${escapeHtml(event.source)}`;
     detailView.appendChild(source);
 
+    // Mostrar EventID si existe
+    if (event.eventId) {
+        const eventIdDiv = document.createElement('div');
+        eventIdDiv.className = 'event-source';
+        eventIdDiv.innerHTML = `🔢 <strong>Event ID:</strong> ${escapeHtml(event.eventId.toString())}`;
+        detailView.appendChild(eventIdDiv);
+    }
+
     const message = document.createElement('div');
     message.className = 'event-message-detail';
     message.innerHTML = '<strong>Mensaje Completo:</strong>';
@@ -263,19 +426,6 @@ function createEventElement(event) {
     eventDiv.appendChild(card);
 
     return eventDiv;
-}
-
-
-// Formatear fecha
-function formatDate(date) {
-    if (!date || isNaN(date.getTime())) {
-        return "Fecha Desconocida"; 
-    }
-    const options = {
-        year: 'numeric', month: 'short', day: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-    };
-    return date.toLocaleString('es-ES', options);
 }
 
 // Escapar HTML
@@ -319,7 +469,7 @@ function triggerSearch() {
 
 // Manejar ordenamiento
 function handleSort(e) {
-    appState.currentSort = e.target.value; // Corregí un error aquí, era e.targe.value
+    appState.currentSort = e.target.value; 
     renderTimeline();
 }
 
@@ -344,9 +494,15 @@ function performClearAll() {
     appState.events = [];
     appState.loadedFiles = [];
     appState.currentFilter = '';
+    appState.currentEventId = ''; // NUEVO
+    
     if (document.getElementById('searchInput')) {
         document.getElementById('searchInput').value = '';
     }
+    if (document.getElementById('eventIdInput')) { // NUEVO
+        document.getElementById('eventIdInput').value = '';
+    }
+    
     renderTimeline();
     updateStats();
 }
@@ -358,6 +514,30 @@ function hideConfirmationModal() {
     if (overlay) {
         overlay.classList.add('hidden');
     }
+}
+
+function showNotificationModal(message) {
+    const overlay = document.getElementById('notificationOverlay');
+    const msgElement = document.getElementById('notificationMessage');
+    const okBtn = document.getElementById('notificationBtnOk');
+
+    if (!overlay || !msgElement || !okBtn) {
+        console.error('Elementos del modal de notificación no encontrados.');
+        alert(message); // Fallback
+        return;
+    }
+
+    msgElement.textContent = message;
+    overlay.classList.remove('hidden');
+
+    // Clonar botón para eliminar listeners previos
+    const newOkBtn = okBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+
+    // Añadir listener
+    newOkBtn.addEventListener('click', () => {
+        overlay.classList.add('hidden');
+    });
 }
 
 // Muestra el modal de confirmación
