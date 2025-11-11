@@ -40,7 +40,7 @@ Cantarell, sans-serif;
 }
 
 .container {
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -90,6 +90,17 @@ Cantarell, sans-serif;
 
 .btn-primary:hover {
     background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-info {
+    background: #0ea5e9;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #0284c7;
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
@@ -248,13 +259,136 @@ Cantarell, sans-serif;
     border-color: var(--primary-hover);
 }
 
-/* Ajuste de foco para el wrapper */
 .filter-group .search-wrapper input:focus + .btn-search {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     z-index: 0; 
 }
 
+/* Main Content Layout - Two columns */
+.main-content {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+/* Files Sidebar */
+.files-sidebar {
+    flex: 0 0 280px;
+    background: var(--bg-primary);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    max-height: calc(100vh - 500px);
+    overflow-y: auto;
+    position: sticky;
+    top: 20px;
+}
+
+.files-sidebar.hidden {
+    display: none;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.sidebar-header h3 {
+    font-size: 16px;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.sidebar-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-mini {
+    padding: 4px 10px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--secondary-color);
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.btn-mini:hover {
+    background: var(--secondary-hover);
+    transform: scale(1.05);
+}
+
+.files-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.file-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.file-item:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-tertiary);
+}
+
+.file-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.file-label {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+    min-width: 0;
+}
+
+.file-name {
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 500;
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+.file-count {
+    font-size: 11px;
+    color: var(--text-secondary);
+    background: var(--bg-primary);
+    padding: 3px 8px;
+    border-radius: 10px;
+    align-self: flex-start;
+}
+
+/* Timeline Wrapper */
+.timeline-wrapper {
+    flex: 1;
+    min-width: 0;
+}
 
 .timeline-container {
     background: var(--bg-primary);
@@ -366,14 +500,12 @@ Cantarell, sans-serif;
 .event-card {
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    /* Borde izquierdo para color de nivel */
     border-left: 5px solid var(--border-color);
     border-radius: 10px;
     padding: 16px;
     transition: all 0.2s ease;
 }
 
-/* Estilos de Borde por Nivel */
 .event-card.event-level-default { border-left-color: var(--secondary-color); }
 .event-card.event-level-info { border-left-color: var(--info-color); }
 .event-card.event-level-success { border-left-color: var(--success-color); }
@@ -405,7 +537,6 @@ Cantarell, sans-serif;
     line-height: 1.6;
     word-wrap: break-word;
     white-space: normal;
-    word-wrap: normal;
 }
 
 .event-message strong {
@@ -483,7 +614,6 @@ Cantarell, sans-serif;
     font-weight: 600;
 }
 
-/* Spinner */
 .spinner {
     width: 50px;
     height: 50px;
@@ -740,6 +870,23 @@ Cantarell, sans-serif;
     margin-top: 10px;
 }
 
+@media (max-width: 1024px) {
+    .main-content {
+        flex-direction: column;
+    }
+    
+    .files-sidebar {
+        flex: 1 1 auto;
+        max-height: 300px;
+        position: relative;
+        top: 0;
+    }
+    
+    .timeline-wrapper {
+        width: 100%;
+    }
+}
+
 @media (max-width: 768px) {
     .header {
         flex-direction: column;
@@ -779,6 +926,10 @@ Cantarell, sans-serif;
         padding: 20px;
         max-width: 95%;
     }
+    
+    .sidebar-header {
+        flex-direction: row;
+    }
 }
 
 /* Estilos de Scrollbar */
@@ -803,9 +954,7 @@ Cantarell, sans-serif;
 
 #notificationMessage {
     white-space: pre-line;
-    
     overflow-wrap: break-word;
     word-wrap: break-word; 
-
     margin-bottom: 20px;
 }

@@ -2,13 +2,13 @@
 const appState = {
     events: [],
     loadedFiles: [],
+    selectedFiles: [],
     currentFilter: '',
     currentSort: 'asc',
     currentLevel: 'tod',
     currentId: '',
-    // Nuevo: almacenar comandos parseados
     searchCommand: {
-        type: null,  // 'ID', 'MSG', 'NIVEL', o null para búsqueda normal
+        type: null,
         value: ''
     }
 };
@@ -41,6 +41,8 @@ function setupEventListeners() {
     const sortOrder = document.getElementById('sortOrder');
     const levelSelect = document.getElementById('sortLevel');
     const sortId = document.getElementById('sortId');
+    const selectAllFilesBtn = document.getElementById('selectAllFilesBtn');
+    const deselectAllFilesBtn = document.getElementById('deselectAllFilesBtn');
 
     if (loadBtn) {
         loadBtn.addEventListener('click', async () => {
@@ -61,7 +63,6 @@ function setupEventListeners() {
         helpBtn.addEventListener('click', showHelpModal);
     }
     
-    // Búsqueda unificada
     if (searchInput && searchButton) {
         searchButton.addEventListener('click', triggerSearch);
         searchInput.addEventListener('keydown', (e) => {
@@ -84,7 +85,14 @@ function setupEventListeners() {
         sortId.addEventListener('change', handleSortId); 
     }
 
-    // Listener para cerrar modal de ayuda
+    if (selectAllFilesBtn) {
+        selectAllFilesBtn.addEventListener('click', selectAllFiles);
+    }
+
+    if (deselectAllFilesBtn) {
+        deselectAllFilesBtn.addEventListener('click', deselectAllFiles);
+    }
+
     const helpBtnClose = document.getElementById('helpBtnClose');
     if (helpBtnClose) {
         helpBtnClose.addEventListener('click', hideHelpModal);
@@ -103,50 +111,54 @@ function setupEventListeners() {
 function parseSearchCommand(searchText) {
     const trimmed = searchText.trim();
     
-    // Comando ID:
     const idMatch = trimmed.match(/^ID:\s*(\d+)/i);
     if (idMatch) {
         return { type: 'ID', value: idMatch[1] };
     }
     
-    // Comando MSG:
     const msgMatch = trimmed.match(/^MSG:\s*(.+)/i);
     if (msgMatch) {
         return { type: 'MSG', value: msgMatch[1].trim() };
     }
     
-    // Comando NIVEL:
     const nivelMatch = trimmed.match(/^NIVEL:\s*(\w+)/i);
     if (nivelMatch) {
         return { type: 'NIVEL', value: nivelMatch[1].toLowerCase() };
     }
     
-    // Sin comando - búsqueda normal en mensaje
     return { type: null, value: trimmed };
 }
 
-// Función auxiliar para obtener eventos filtrados (reutilizable)
+// Función auxiliar para obtener eventos filtrados
 function getFilteredEvents() {
     return appState.events.filter(event => {
+        // Filtro por archivos seleccionados
+        // IMPORTANTE: Si hay archivos cargados pero ninguno seleccionado, no mostrar nada
+        if (appState.loadedFiles.length > 0) {
+            if (appState.selectedFiles.length === 0) {
+                return false; // No hay archivos seleccionados = no mostrar eventos
+            }
+            if (!appState.selectedFiles.includes(event.source)) {
+                return false; // Este archivo no está seleccionado
+            }
+        }
+
         // Filtro por comando de búsqueda
         if (appState.searchCommand.value) {
             switch (appState.searchCommand.type) {
                 case 'ID':
-                    // Buscar por Event ID
                     if (!event.eventId || !event.eventId.toString().includes(appState.searchCommand.value)) {
                         return false;
                     }
                     break;
                 
                 case 'MSG':
-                    // Buscar en mensaje
                     if (!event.message.toLowerCase().includes(appState.searchCommand.value.toLowerCase())) {
                         return false;
                     }
                     break;
                 
                 case 'NIVEL':
-                    // Filtrar por nivel
                     const nivelMap = {
                         'error': 'error',
                         'warning': 'warning',
@@ -167,7 +179,6 @@ function getFilteredEvents() {
                     break;
                 
                 default:
-                    // Búsqueda normal (sin comando) - buscar en mensaje
                     if (!event.message.toLowerCase().includes(appState.searchCommand.value.toLowerCase())) {
                         return false;
                     }
@@ -222,6 +233,8 @@ async function openFileDialog() {
             for (const filePath of selection) {
                 await loadFile(filePath);
             }
+            
+            updateFilesPanel();
         } else {
             console.log('No se seleccionó ningún archivo');
         }
@@ -231,7 +244,7 @@ async function openFileDialog() {
     }
 }
 
-// Cargar y procesar archivo
+// Cargar y procesar archivo - OPTIMIZADO
 async function loadFile(filePath) {
     const fileName = filePath.split(/[\\/]/).pop();
 
@@ -245,7 +258,7 @@ async function loadFile(filePath) {
         const content = await Neutralino.filesystem.readFile(filePath);
         const extension = fileName.split('.').pop().toLowerCase();
 
-        // Llamada a la función que está en parsers.js
+        // Parseo optimizado
         const events = parseLogContent(content, extension, fileName);
 
         if (events.length === 0) {
@@ -254,9 +267,14 @@ async function loadFile(filePath) {
         
         appState.events.push(...events);
         appState.loadedFiles.push(fileName);
+        appState.selectedFiles.push(fileName);
         
-        renderTimeline();
-        updateStats();
+        // Renderizado optimizado con requestAnimationFrame
+        requestAnimationFrame(() => {
+            renderTimeline();
+            updateStats();
+        });
+        
         console.log(`Cargados ${events.length} eventos desde ${fileName}.`);
     } catch (error) {
         console.error('Error al cargar el archivo:', error);
@@ -266,41 +284,129 @@ async function loadFile(filePath) {
     }
 }
 
-// Renderizar timeline
+// Actualizar panel de archivos - OPTIMIZADO
+function updateFilesPanel() {
+    const filesSidebar = document.getElementById('filesSidebar');
+    const filesList = document.getElementById('filesList');
+
+    if (!filesSidebar || !filesList) return;
+
+    if (appState.loadedFiles.length === 0) {
+        filesSidebar.classList.add('hidden');
+        return;
+    }
+
+    filesSidebar.classList.remove('hidden');
+    
+    // Usar DocumentFragment para evitar reflows múltiples
+    const fragment = document.createDocumentFragment();
+
+    appState.loadedFiles.forEach(fileName => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `file-${fileName}`;
+        checkbox.className = 'file-checkbox';
+        checkbox.checked = appState.selectedFiles.includes(fileName);
+        
+        checkbox.addEventListener('change', (e) => {
+            handleFileCheckboxChange(fileName, e.target.checked);
+        });
+
+        const label = document.createElement('label');
+        label.htmlFor = `file-${fileName}`;
+        label.className = 'file-label';
+        
+        const eventCount = appState.events.filter(e => e.source === fileName).length;
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'file-name';
+        nameSpan.textContent = fileName;
+        
+        const countSpan = document.createElement('span');
+        countSpan.className = 'file-count';
+        countSpan.textContent = `${eventCount}`;
+
+        label.appendChild(nameSpan);
+        label.appendChild(countSpan);
+        
+        fileItem.appendChild(checkbox);
+        fileItem.appendChild(label);
+        fragment.appendChild(fileItem);
+    });
+
+    filesList.innerHTML = '';
+    filesList.appendChild(fragment);
+}
+
+// Manejar cambio en checkbox de archivo
+function handleFileCheckboxChange(fileName, isChecked) {
+    if (isChecked) {
+        if (!appState.selectedFiles.includes(fileName)) {
+            appState.selectedFiles.push(fileName);
+        }
+    } else {
+        appState.selectedFiles = appState.selectedFiles.filter(f => f !== fileName);
+    }
+    
+    requestAnimationFrame(() => {
+        renderTimeline();
+        updateStats();
+    });
+}
+
+// Seleccionar todos los archivos
+function selectAllFiles() {
+    appState.selectedFiles = [...appState.loadedFiles];
+    updateFilesPanel();
+    requestAnimationFrame(() => {
+        renderTimeline();
+        updateStats();
+    });
+}
+
+// Deseleccionar todos los archivos
+function deselectAllFiles() {
+    appState.selectedFiles = [];
+    updateFilesPanel();
+    requestAnimationFrame(() => {
+        renderTimeline();
+        updateStats();
+    });
+}
+
+// Renderizar timeline - OPTIMIZADO con Virtual Scrolling concept
 function renderTimeline() {
     const timeline = document.getElementById('timeline');
     const emptyState = document.getElementById('emptyState');
 
-    // Obtener eventos filtrados
     const filteredEvents = getFilteredEvents();
 
     if (filteredEvents.length === 0) {
         timeline.classList.remove('visible');
         emptyState.classList.remove('hidden');
         document.getElementById('eventsCount').textContent = 0;
+        document.getElementById('visibleEventsCount').textContent = 0;
         return;
     }
 
-    // LÓGICA DE ORDENAMIENTO
     const sortedEvents = [...filteredEvents].sort((a, b) => {
-        // Si hay ordenamiento por ID activo
         if (appState.currentId !== '') {
             const idA = a.id !== null && a.id !== undefined ? a.id : -1;
             const idB = b.id !== null && b.id !== undefined ? b.id : -1;
             
-            // Eventos sin ID van al final
             if (idA === -1 && idB !== -1) return 1;
             if (idA !== -1 && idB === -1) return -1;
             
-            // Ordenar por ID
             if (appState.currentId === 'asc') {
                 return idA - idB;
-            } else { // desc
+            } else {
                 return idB - idA;
             }
         }
         
-        // Si no hay orden por ID, ordenar por fecha
         const dateA = a.date ? a.date.getTime() : 0;
         const dateB = b.date ? b.date.getTime() : 0;
         if (dateA === 0 && dateB !== 0) return 1;
@@ -308,18 +414,23 @@ function renderTimeline() {
         return appState.currentSort === 'asc' ? dateA - dateB : dateB - dateA;
     });
 
-    timeline.innerHTML = '';
+    // Usar DocumentFragment para batch DOM updates
+    const fragment = document.createDocumentFragment();
+    
     sortedEvents.forEach(event => {
         const eventElement = createEventElement(event);
-        timeline.appendChild(eventElement);
+        fragment.appendChild(eventElement);
     });
 
-    document.getElementById('eventsCount').textContent = sortedEvents.length;
+    timeline.innerHTML = '';
+    timeline.appendChild(fragment);
+
+    document.getElementById('visibleEventsCount').textContent = sortedEvents.length;
     timeline.classList.add('visible');
     emptyState.classList.add('hidden');
 }
 
-// Crear elemento de evento
+// Crear elemento de evento - Optimizado
 function createEventElement(event) {
     const eventDiv = document.createElement('div');
     eventDiv.className = 'timeline-event';
@@ -370,7 +481,6 @@ function createEventElement(event) {
     source.innerHTML = `📄 <strong>Archivo:</strong> ${escapeHtml(event.source)}`;
     detailView.appendChild(source);
 
-    // Mostrar Event ID si existe
     if (event.eventId) {
         const eventIdDiv = document.createElement('div');
         eventIdDiv.className = 'event-source';
@@ -412,7 +522,6 @@ async function exportToJson() {
     try {
         showLoading(true);
 
-        // Obtener eventos filtrados
         const filteredEvents = getFilteredEvents();
 
         if (filteredEvents.length === 0) {
@@ -421,7 +530,6 @@ async function exportToJson() {
             return;
         }
 
-        // Preparar datos para exportar
         const exportData = {
             exportDate: new Date().toISOString(),
             totalEvents: filteredEvents.length,
@@ -429,6 +537,7 @@ async function exportToJson() {
                 searchCommand: appState.searchCommand.type ? 
                     `${appState.searchCommand.type}:${appState.searchCommand.value}` : 
                     appState.searchCommand.value || 'ninguno',
+                selectedFiles: appState.selectedFiles.length > 0 ? appState.selectedFiles : 'todos',
                 level: appState.currentLevel !== 'tod' ? appState.currentLevel : 'todos',
                 sortOrder: appState.currentSort,
                 sortId: appState.currentId || 'ninguno'
@@ -445,14 +554,11 @@ async function exportToJson() {
             }))
         };
 
-        // Convertir a JSON con formato legible
         const jsonContent = JSON.stringify(exportData, null, 2);
 
-        // Generar nombre de archivo con timestamp
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
         const defaultFileName = `timeline-export-${timestamp}.json`;
 
-        // Mostrar diálogo para guardar archivo
         const savePath = await Neutralino.os.showSaveDialog('Guardar línea de tiempo como JSON', {
             defaultPath: defaultFileName,
             filters: [
@@ -462,16 +568,12 @@ async function exportToJson() {
         });
 
         if (savePath) {
-            // Asegurar que termina en .json
             const finalPath = savePath.toLowerCase().endsWith('.json') ? savePath : savePath + '.json';
-
-            // Guardar el archivo
             await Neutralino.filesystem.writeFile(finalPath, jsonContent);
             
             showLoading(false);
             console.log(`Exportación exitosa: ${filteredEvents.length} eventos guardados en ${finalPath}`);
             
-            // Mostrar notificación al usuario
             showNotificationModal(
                 `✅ Exportación exitosa!\n\n${filteredEvents.length} eventos guardados en:\n${finalPath}`
             );
@@ -512,9 +614,12 @@ function escapeHtml(text) {
 function updateStats() {
     document.getElementById('filesCount').textContent = appState.loadedFiles.length;
     document.getElementById('eventsCount').textContent = appState.events.length;
+    
+    const filteredEvents = getFilteredEvents();
+    document.getElementById('visibleEventsCount').textContent = filteredEvents.length;
 
-    if (appState.events.length > 0) {
-        const validDates = appState.events
+    if (filteredEvents.length > 0) {
+        const validDates = filteredEvents
             .map(e => e.date)
             .filter(d => d && !isNaN(d.getTime())) 
             .map(d => d.getTime());
@@ -537,36 +642,34 @@ function triggerSearch() {
     const searchInput = document.getElementById('searchInput');
     const searchText = searchInput.value;
     
-    // Parsear comando
     appState.searchCommand = parseSearchCommand(searchText);
     
     console.log('Comando parseado:', appState.searchCommand);
-    renderTimeline();
+    requestAnimationFrame(() => renderTimeline());
 }
 
 // Manejar ordenamiento por fecha
 function handleSort(e) {
     appState.currentSort = e.target.value; 
-    renderTimeline();
+    requestAnimationFrame(() => renderTimeline());
 }
 
 // Manejar filtro por nivel
 function handleLevelFilter(e) {
     appState.currentLevel = e.target.value;
-    renderTimeline();
+    requestAnimationFrame(() => renderTimeline());
 }
 
 // Manejar filtro por ID
 function handleSortId(e) {
     appState.currentId = e.target.value;
-    renderTimeline();
+    requestAnimationFrame(() => renderTimeline());
 }
 
 // Limpiar todo
 function clearAll() {
     if (appState.events.length === 0) return;
     
-    // Mostrar el modal en lugar de borrar directamente
     showConfirmationModal('¿Estás seguro de que deseas borrar todos los eventos y archivos?', () => {
         performClearAll();
     });
@@ -576,6 +679,7 @@ function clearAll() {
 function performClearAll() {
     appState.events = [];
     appState.loadedFiles = [];
+    appState.selectedFiles = [];
     appState.searchCommand = { type: null, value: '' };
     appState.currentId = '';
     
@@ -583,6 +687,7 @@ function performClearAll() {
         document.getElementById('searchInput').value = '';
     }
     
+    updateFilesPanel();
     renderTimeline();
     updateStats();
 }
@@ -611,18 +716,16 @@ function showNotificationModal(message) {
 
     if (!overlay || !msgElement || !okBtn) {
         console.error('Elementos del modal de notificación no encontrados.');
-        alert(message); // Fallback
+        alert(message);
         return;
     }
 
     msgElement.textContent = message;
     overlay.classList.remove('hidden');
 
-    // Clonar botón para eliminar listeners previos
     const newOkBtn = okBtn.cloneNode(true);
     okBtn.parentNode.replaceChild(newOkBtn, okBtn);
 
-    // Añadir listener
     newOkBtn.addEventListener('click', () => {
         overlay.classList.add('hidden');
     });
@@ -636,7 +739,7 @@ function showConfirmationModal(message, onConfirm) {
     const noBtn = document.getElementById('confirmBtnNo');
 
     if (!overlay || !msgElement || !yesBtn || !noBtn) {
-        console.error('Elementos del modal de confirmación no encontrados. Revise index.html');
+        console.error('Elementos del modal de confirmación no encontrados.');
         onConfirm();
         return;
     }
@@ -644,14 +747,12 @@ function showConfirmationModal(message, onConfirm) {
     msgElement.textContent = message;
     overlay.classList.remove('hidden');
 
-    // Clonar botones para eliminar event listeners anteriores
     const newYesBtn = yesBtn.cloneNode(true);
     yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
     
     const newNoBtn = noBtn.cloneNode(true);
     noBtn.parentNode.replaceChild(newNoBtn, noBtn);
 
-    // Añadir nuevos listeners
     newYesBtn.addEventListener('click', () => {
         hideConfirmationModal();
         onConfirm();

@@ -18,8 +18,8 @@
                 <button id="exportJsonBtn" class="btn btn-primary">
                     💾 Exportar a JSON
                 </button>
-                <button id="helpBtn" class="btn btn-primary">
-                    ❓ Comandos de Búsqueda
+                <button id="helpBtn" class="btn btn-info">
+                    ℹ️ Comandos de Búsqueda
                 </button>
                 <button id="clearAllBtn" class="btn btn-secondary">
                     🗑️ Limpiar Todo
@@ -38,6 +38,10 @@
                 <span id="eventsCount" class="stat-value">0</span>
             </div>
             <div class="stat-item">
+                <span class="stat-label">Eventos visibles:</span>
+                <span id="visibleEventsCount" class="stat-value">0</span>
+            </div>
+            <div class="stat-item">
                 <span class="stat-label">Rango de fechas:</span>
                 <span id="dateRange" class="stat-value">-</span>
             </div>
@@ -46,7 +50,7 @@
         <!-- Filters Section -->
         <div class="filters-section">
             <div class="filter-group filter-group-wide">
-                <label for="searchInput">🔍 Barra de busquedas (ID, MSG, NIVEL, o texto):</label>
+                <label for="searchInput">🔍 Buscar (usa comandos: ID:1000, MSG:texto, NIVEL:error):</label>
                 <div class="search-wrapper">
                     <input type="text" id="searchInput" placeholder="Escribe aquí o usa comandos...">
                     <button id="searchButton" class="btn-search">🔎</button>
@@ -81,14 +85,33 @@
             </div>
         </div>
 
-        <!-- Timeline Section -->
-        <div class="timeline-container">
-            <div id="emptyState" class="empty-state">
-                <div class="empty-icon">📄</div>
-                <h2>No hay eventos cargados</h2>
-                <p>Haz clic en "Cargar Archivo de Log" para comenzar</p>
+        <!-- Main Content: Sidebar + Timeline -->
+        <div class="main-content">
+            <!-- Files Sidebar -->
+            <aside id="filesSidebar" class="files-sidebar hidden">
+                <div class="sidebar-header">
+                    <h3>📂 Archivos</h3>
+                    <div class="sidebar-actions">
+                        <button id="selectAllFilesBtn" class="btn-mini" title="Seleccionar todos">✓</button>
+                        <button id="deselectAllFilesBtn" class="btn-mini" title="Deseleccionar todos">✗</button>
+                    </div>
+                </div>
+                <div id="filesList" class="files-list">
+                    <!-- Los checkboxes se generarán dinámicamente aquí -->
+                </div>
+            </aside>
+
+            <!-- Timeline Section -->
+            <div class="timeline-wrapper">
+                <div class="timeline-container">
+                    <div id="emptyState" class="empty-state">
+                        <div class="empty-icon">📄</div>
+                        <h2>No hay eventos cargados</h2>
+                        <p>Haz clic en "Cargar Archivo de Log" para comenzar</p>
+                    </div>
+                    <div id="timeline" class="timeline"></div>
+                </div>
             </div>
-            <div id="timeline" class="timeline"></div>
         </div>
 
         <!-- Loading Overlay -->
