@@ -123,6 +123,17 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
+/*
+ * SOLUCIÓN (Botones de tamaño fijo):
+ * Añadimos un min-width a los botones del header para
+ * que mantengan un tamaño uniforme entre idiomas.
+ */
+.header-actions .btn {
+    min-width: 190px;
+}
+/* Fin Solución */
+
+
 /* Efecto "ripple" al hacer clic */
 .btn::before {
     content: '';
@@ -182,6 +193,20 @@ body {
     transform: translateY(0);
 }
 
+/* Deshabilitar botones */
+.btn:disabled {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    border: 1px solid var(--border-color);
+}
+
+.btn-primary:disabled {
+    background: linear-gradient(135deg, #2a3a57 0%, #222e44 100%);
+}
+
 .btn-translate {
     padding: 8px 12px;
     background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
@@ -193,7 +218,7 @@ body {
     align-items: center;
     justify-content: center;
     height: 44px;
-    min-width: 44px;
+    min-width: 44px; /* Solución para botón de traducir */
     box-shadow: var(--shadow-sm);
 }
 
@@ -525,6 +550,13 @@ body {
     display: none;
     position: relative;
     padding: 24px 0;
+    /* * SOLUCIÓN (Rendimiento): 
+     * Hacemos la línea de tiempo scrollable para la paginación.
+     */
+    max-height: 70vh; /* Ajusta esto según sea necesario */
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 10px; /* Espacio para el scrollbar */
 }
 
 .timeline.visible {
@@ -889,6 +921,11 @@ body {
     border-color: var(--primary-color);
 }
 
+/*
+ * SOLUCIÓN (Modal de ayuda cortado):
+ * Añadimos max-height y overflow-y para que el modal
+ * sea scrollable si su contenido es muy alto.
+ */
 .help-modal {
     background: linear-gradient(135deg, var(--bg-primary) 0%, #1a2436 100%);
     padding: 36px;
@@ -899,7 +936,12 @@ body {
     color: var(--text-primary);
     text-align: left;
     border: 2px solid var(--border-color);
+    
+    /* Propiedades añadidas: */
+    max-height: 85vh; /* Límite de altura */
+    overflow-y: auto;   /* Scroll vertical si es necesario */
 }
+/* Fin Solución */
 
 .help-modal h2 {
     font-size: 26px;
@@ -1022,6 +1064,41 @@ body {
     line-height: 1.6;
 }
 
+/*
+ * INICIO: Estilos de Paginación
+ * Estilos para los nuevos controles de "Anterior" y "Siguiente".
+ */
+.pagination-controls {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, #1a2436 100%);
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid var(--border-color);
+}
+
+.pagination-controls.hidden {
+    display: none;
+}
+
+.pagination-controls .btn {
+    min-width: 140px; /* Ancho más pequeño que los botones del header */
+}
+
+.pagination-controls #pageInfo {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    min-width: 120px;
+    text-align: center;
+}
+/* FIN: Estilos de Paginación */
+
+
 /* A partir de aquí, los media queries para hacerlo responsivo */
 @media (max-width: 1200px) {
     .header {
@@ -1054,6 +1131,10 @@ body {
     .timeline-wrapper {
         width: 100%;
     }
+    
+    .timeline {
+        max-height: 60vh; /* Más altura en tablet */
+    }
 }
 
 @media (max-width: 768px) {
@@ -1075,7 +1156,7 @@ body {
     
     .header-actions .btn {
         flex: 1;
-        min-width: 0;
+        min-width: 0; /* Dejar que los botones se ajusten en móvil */
     }
 
     .stats-bar {
@@ -1128,6 +1209,16 @@ body {
     
     .event-card {
         padding: 16px;
+    }
+    
+    .pagination-controls {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .pagination-controls .btn {
+        width: 100%;
+        min-width: 0;
     }
 }
 
@@ -1186,12 +1277,6 @@ body {
 .timeline-event {
     animation: fadeInUp 0.4s ease-out backwards;
 }
-
-.timeline-event:nth-child(1) { animation-delay: 0.05s; }
-.timeline-event:nth-child(2) { animation-delay: 0.1s; }
-.timeline-event:nth-child(3) { animation-delay: 0.15s; }
-.timeline-event:nth-child(4) { animation-delay: 0.2s; }
-.timeline-event:nth-child(5) { animation-delay: 0.25s; }
 
 /* Un pequeño efecto "glass" para las cajas de stats */
 .stat-item::before {

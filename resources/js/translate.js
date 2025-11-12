@@ -81,12 +81,18 @@ const translations = {
         errorNeutralino: "La biblioteca de Neutralino no está cargada.",
         errorInstructions: "Por favor ejecuta los siguientes comandos:",
         
+        // Pagination
+        prevPage: "‹‹ Anteriores",
+        nextPage: "Siguientes ››",
+        pageInfo: "Página {currentPage} de {totalPages}", // {currentPage} y {totalPages} serán reemplazados
+        
         // Image alt
         translateAlt: "traducir"
     },
     en: {
         // Header
-        mainTitle: "📊 Windows Log Timeline Viewer                                               ",
+        // SOLUCIÓN: Eliminados los espacios en blanco extra
+        mainTitle: "📊 Windows Log Timeline Viewer", 
         loadFileBtn: "📁 Load Log File",
         exportJsonBtn: "💾 Export to JSON",
         helpBtn: "❓ Search Commands",
@@ -162,6 +168,11 @@ const translations = {
         errorConfig: "⚠️ Configuration Error",
         errorNeutralino: "Neutralino library is not loaded.",
         errorInstructions: "Please run the following commands:",
+        
+        // Pagination
+        prevPage: "‹‹ Previous",
+        nextPage: "Next ››",
+        pageInfo: "Page {currentPage} of {totalPages}",
         
         // Image alt
         translateAlt: "translate"
@@ -331,7 +342,10 @@ function translatePage(lang) {
     
     // Modal de confirmación (ej. borrar todo)
     const confirmMessage = document.getElementById('confirmMessage');
-    if (confirmMessage) confirmMessage.textContent = t.confirmMessage;
+    if (confirmMessage) {
+        // No sobreescribir el mensaje si fue puesto dinámicamente
+        // confirmMessage.textContent = t.confirmMessage; 
+    }
     
     const confirmYes = document.getElementById('confirmBtnYes');
     if (confirmYes) confirmYes.textContent = t.confirmYes;
@@ -343,12 +357,29 @@ function translatePage(lang) {
     const notificationOk = document.getElementById('notificationBtnOk');
     if (notificationOk) notificationOk.textContent = t.notificationOk;
     
+    // --- Paginación ---
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    if (prevPageBtn) prevPageBtn.textContent = t.prevPage;
+    
+    const nextPageBtn = document.getElementById('nextPageBtn');
+    if (nextPageBtn) nextPageBtn.textContent = t.nextPage;
+    
+    // El texto de pageInfo se actualiza dinámicamente en main.js
+    // para incluir los números de página.
+    
     // Texto alternativo de la imagen del botón de traducir
     const translateImg = document.querySelector('#translate img');
     if (translateImg) translateImg.alt = t.translateAlt;
     
     // Guardamos el idioma elegido en localStorage para la próxima visita
     localStorage.setItem('language', lang);
+
+    // Volver a renderizar la paginación con el texto nuevo si es necesario
+    if (typeof renderPaginationControls !== 'undefined' && typeof appState !== 'undefined') {
+        const totalFilteredCount = getFilteredEvents ? getFilteredEvents().length : 0;
+        const totalPages = Math.ceil(totalFilteredCount / appState.eventsPerPage) || 1;
+        renderPaginationControls(totalFilteredCount, totalPages);
+    }
 }
 
 // Configura los listeners para el sistema de traducción

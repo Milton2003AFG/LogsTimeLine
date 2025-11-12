@@ -10,24 +10,62 @@ const appState = {
     searchCommand: {
         type: null,
         value: ''
-    }
+    },
+    currentPage: 1,
+    eventsPerPage: 100 // Paginación: Mostrar 100 eventos por página
 };
 
 async function init() {
     try {
         if (typeof Neutralino === 'undefined') {
             console.error('Neutralino no está cargado. Asegúrate de ejecutar "neu update" primero.');
+            // Mostramos el error de forma visual
+            showInitializationError();
             return;
         }
         await Neutralino.init();
         console.log('Neutralino inicializado correctamente');
         setupEventListeners();
         updateStats();
+        // Ocultar paginación al inicio
+        renderPaginationControls(0, 1);
     } catch (error) {
         console.error('Error al inicializar:', error);
-        console.error('Error al inicializar la aplicación: ' + error.message);
+        showInitializationError('Error al inicializar la aplicación: ' + error.message);
     }
 }
+
+// Muestra el error crítico si Neutralino no carga
+function showInitializationError(customMessage = '') {
+    const defaultTitle = "⚠️ Error de Configuración";
+    const defaultMsg = "La biblioteca de Neutralino no está cargada.";
+    const instructions = "Por favor ejecuta los siguientes comandos:";
+    const commands = "cd mi-app\nneu update\nneu run";
+
+    // Intentamos usar el modal de notificación si existe
+    if (typeof showNotificationModal === 'function' && translations) {
+        const lang = localStorage.getItem('language') || 'es';
+        const t = translations[lang].errorConfig ? translations[lang] : translations['es'];
+        
+        showNotificationModal(
+            `${t.errorConfig}\n\n` +
+            `${customMessage || t.errorNeutralino}\n\n` +
+            `${t.errorInstructions}\n` +
+            `neu update`
+        );
+    } else {
+        // Fallback a un body.innerHTML si todo lo demás falla
+        document.body.innerHTML = `<div style="padding: 40px; text-align: center; font-family: sans-serif; color: #f8fafc;">` +
+            `<h1 style="color: #ef4444;">${defaultTitle}</h1>` +
+            `<p style="font-size: 18px; margin: 20px 0;">${customMessage || defaultMsg}</p>` +
+            `<p style="font-size: 16px; color: #94a3b8;">${instructions}</p>` +
+            `<pre style="background: #1e293b; padding: 20px; border-radius: 8px; text-align: left; max-width: 600px; margin: 20px auto; border: 1px solid #334155;">` +
+            commands +
+            '</pre>' +
+            '</div>';
+    }
+}
+
 
 // Conectamos todos los botones, inputs y selectores a sus funciones
 function setupEventListeners() {
@@ -42,6 +80,9 @@ function setupEventListeners() {
     const sortId = document.getElementById('sortId');
     const selectAllFilesBtn = document.getElementById('selectAllFilesBtn');
     const deselectAllFilesBtn = document.getElementById('deselectAllFilesBtn');
+    const helpBtnClose = document.getElementById('helpBtnClose');
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    const nextPageBtn = document.getElementById('nextPageBtn');
 
     if (loadBtn) {
         loadBtn.addEventListener('click', async () => {
@@ -92,10 +133,23 @@ function setupEventListeners() {
         deselectAllFilesBtn.addEventListener('click', deselectAllFiles);
     }
 
-    const helpBtnClose = document.getElementById('helpBtnClose');
     if (helpBtnClose) {
         helpBtnClose.addEventListener('click', hideHelpModal);
     }
+
+    // Listeners de Paginación 
+    if (prevPageBtn) {
+        prevPageBtn.addEventListener('click', () => {
+            goToPage(appState.currentPage - 1);
+        });
+    }
+    
+    if (nextPageBtn) {
+        nextPageBtn.addEventListener('click', () => {
+            goToPage(appState.currentPage + 1);
+        });
+    }
+    // Fin Listeners de Paginación 
 
     try {
         Neutralino.events.on('windowClose', () => {
@@ -129,10 +183,10 @@ function parseSearchCommand(searchText) {
     return { type: null, value: trimmed };
 }
 
-// Devuelve los eventos que coinciden con *todos* los filtros activos
+// Devuelve los eventos que coinciden con todos los filtros activos
 function getFilteredEvents() {
     return appState.events.filter(event => {
-        // Súper importante: si hay archivos cargados pero ninguno seleccionado, no mostramos nada.
+        // Si hay archivos cargados pero ninguno seleccionado, no mostramos nada.
         if (appState.loadedFiles.length > 0) {
             if (appState.selectedFiles.length === 0) {
                 return false; 
@@ -196,6 +250,7 @@ function getFilteredEvents() {
             const mapped = levelMap[appState.currentLevel];
 
             if (appState.currentLevel === 'det') {
+                // 'Detallado' es un caso especial, puede ser 'detailed' o 'null' (sin nivel)
                 if (event.level !== 'detailed' && event.level !== null) {
                     return false;
                 }
@@ -226,6 +281,7 @@ async function openFileDialog() {
         if (selection && selection.length > 0) {
             // Limpiamos la búsqueda anterior al cargar nuevos archivos
             appState.searchCommand = { type: null, value: '' };
+            appState.currentPage = 1; // Reseteamos paginación
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 searchInput.value = '';
@@ -241,7 +297,7 @@ async function openFileDialog() {
         }
     } catch (error) {
         console.error('Error al abrir el diálogo:', error);
-        console.error('Error al seleccionar el archivo:\n\n' + error.message);
+        showNotificationModal('Error al seleccionar el archivo:\n\n' + error.message);
     }
 }
 
@@ -252,6 +308,7 @@ async function loadFile(filePath) {
     // Evitamos cargar el mismo archivo dos veces
     if (appState.loadedFiles.includes(fileName)) {
         console.warn(`El archivo ${fileName} ya está cargado. Omitiendo.`);
+        showNotificationModal(`El archivo ${fileName} ya está cargado.`);
         return;
     }
 
@@ -280,7 +337,7 @@ async function loadFile(filePath) {
         console.log(`Cargados ${events.length} eventos desde ${fileName}.`);
     } catch (error) {
         console.error('Error al cargar el archivo:', error);
-        console.error('Error al cargar el archivo: ' + error.message);
+        showNotificationModal('Error al cargar el archivo: ' + error.message);
     } finally {
         showLoading(false);
     }
@@ -352,6 +409,8 @@ function handleFileCheckboxChange(fileName, isChecked) {
         appState.selectedFiles = appState.selectedFiles.filter(f => f !== fileName);
     }
     
+    appState.currentPage = 1; // Reseteamos paginación
+    
     // Pedimos al navegador que renderice en el próximo ciclo
     requestAnimationFrame(() => {
         renderTimeline();
@@ -361,6 +420,7 @@ function handleFileCheckboxChange(fileName, isChecked) {
 
 function selectAllFiles() {
     appState.selectedFiles = [...appState.loadedFiles];
+    appState.currentPage = 1; // Reseteamos paginación
     updateFilesPanel();
     requestAnimationFrame(() => {
         renderTimeline();
@@ -370,6 +430,7 @@ function selectAllFiles() {
 
 function deselectAllFiles() {
     appState.selectedFiles = [];
+    appState.currentPage = 1; // Reseteamos paginación
     updateFilesPanel();
     requestAnimationFrame(() => {
         renderTimeline();
@@ -383,14 +444,27 @@ function renderTimeline() {
     const emptyState = document.getElementById('emptyState');
 
     const filteredEvents = getFilteredEvents();
+    const totalFilteredCount = filteredEvents.length;
 
-    if (filteredEvents.length === 0) {
+    if (totalFilteredCount === 0) {
         timeline.classList.remove('visible');
         emptyState.classList.remove('hidden');
-        document.getElementById('eventsCount').textContent = 0;
+        document.getElementById('eventsCount').textContent = appState.events.length;
         document.getElementById('visibleEventsCount').textContent = 0;
+        renderPaginationControls(0, 1); // Ocultar paginación
         return;
     }
+
+    // --- Lógica de Paginación ---
+    const totalPages = Math.ceil(totalFilteredCount / appState.eventsPerPage);
+    if (appState.currentPage > totalPages) {
+        appState.currentPage = totalPages;
+    }
+    
+    const startIndex = (appState.currentPage - 1) * appState.eventsPerPage;
+    const endIndex = appState.currentPage * appState.eventsPerPage;
+    // --- Fin Lógica de Paginación ---
+
 
     const sortedEvents = [...filteredEvents].sort((a, b) => {
         // El ordenamiento por ID tiene prioridad
@@ -416,10 +490,14 @@ function renderTimeline() {
         return appState.currentSort === 'asc' ? dateA - dateB : dateB - dateA;
     });
 
+    // --- Paginación: Cortamos los eventos a mostrar ---
+    const pageEvents = sortedEvents.slice(startIndex, endIndex);
+    // --- Fin Paginación ---
+
     // Usamos un DocumentFragment para optimizar el renderizado
     const fragment = document.createDocumentFragment();
     
-    sortedEvents.forEach(event => {
+    pageEvents.forEach(event => {
         const eventElement = createEventElement(event);
         fragment.appendChild(eventElement);
     });
@@ -427,10 +505,66 @@ function renderTimeline() {
     timeline.innerHTML = '';
     timeline.appendChild(fragment);
 
-    document.getElementById('visibleEventsCount').textContent = sortedEvents.length;
+    // Actualizamos stats visibles (visibleEventsCount ahora se actualiza en updateStats)
+    updateStats(); // Asegurarnos de que las stats están al día
+    renderPaginationControls(totalFilteredCount, totalPages); // Dibujar controles de paginación
+
     timeline.classList.add('visible');
     emptyState.classList.add('hidden');
+    
+    // Scroll al inicio de la línea de tiempo
+    timeline.scrollTop = 0;
 }
+
+// --- Nueva Función: Controlar paginación ---
+function goToPage(pageNumber) {
+    const filteredEvents = getFilteredEvents();
+    const totalPages = Math.ceil(filteredEvents.length / appState.eventsPerPage);
+
+    // Validar límites de página
+    if (pageNumber < 1) {
+        pageNumber = 1;
+    }
+    if (pageNumber > totalPages) {
+        pageNumber = totalPages;
+    }
+
+    if (pageNumber !== appState.currentPage) {
+        appState.currentPage = pageNumber;
+        requestAnimationFrame(() => renderTimeline());
+    }
+}
+
+// --- Nueva Función: Dibujar controles de paginación ---
+function renderPaginationControls(totalFilteredCount, totalPages) {
+    const controls = document.getElementById('paginationControls');
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+    const pageInfo = document.getElementById('pageInfo');
+
+    if (totalFilteredCount <= appState.eventsPerPage) {
+        controls.classList.add('hidden');
+        return;
+    }
+
+    controls.classList.remove('hidden');
+
+    // Actualizar texto de info (usando traducciones si están disponibles)
+    const lang = localStorage.getItem('language') || 'es';
+    let pageInfoText = `Página ${appState.currentPage} de ${totalPages}`;
+    if (typeof translations !== 'undefined' && translations[lang] && translations[lang].pageInfo) {
+        pageInfoText = translations[lang].pageInfo
+            .replace('{currentPage}', appState.currentPage)
+            .replace('{totalPages}', totalPages);
+    }
+    pageInfo.textContent = pageInfoText;
+
+
+    // Habilitar/deshabilitar botones
+    prevBtn.disabled = (appState.currentPage === 1);
+    nextBtn.disabled = (appState.currentPage === totalPages);
+}
+
 
 // Construye el HTML para una sola tarjeta de evento
 function createEventElement(event) {
@@ -471,7 +605,8 @@ function createEventElement(event) {
     if (messageText.length > maxLen) {
         messageText = messageText.substring(0, maxLen) + '...';
     }
-    if (messageText.length === 0) {
+    // Corregido: chequear si está vacío DESPUÉS de trim
+    if (messageText.trim().length === 0) {
         messageText = '(Mensaje vacío, haga clic para ver detalles)';
     }
     summaryMessage.textContent = messageText;
@@ -650,6 +785,7 @@ function triggerSearch() {
     
     // Guardamos el comando parseado en el estado
     appState.searchCommand = parseSearchCommand(searchText);
+    appState.currentPage = 1; // Reseteamos paginación
     
     console.log('Comando parseado:', appState.searchCommand);
     requestAnimationFrame(() => renderTimeline());
@@ -657,16 +793,19 @@ function triggerSearch() {
 
 function handleSort(e) {
     appState.currentSort = e.target.value; 
+    appState.currentPage = 1; // Reseteamos paginación
     requestAnimationFrame(() => renderTimeline());
 }
 
 function handleLevelFilter(e) {
     appState.currentLevel = e.target.value;
+    appState.currentPage = 1; // Reseteamos paginación
     requestAnimationFrame(() => renderTimeline());
 }
 
 function handleSortId(e) {
     appState.currentId = e.target.value;
+    appState.currentPage = 1; // Reseteamos paginación
     requestAnimationFrame(() => renderTimeline());
 }
 
@@ -686,14 +825,16 @@ function performClearAll() {
     appState.selectedFiles = [];
     appState.searchCommand = { type: null, value: '' };
     appState.currentId = '';
+    appState.currentPage = 1; // Reseteamos paginación
     
     if (document.getElementById('searchInput')) {
         document.getElementById('searchInput').value = '';
     }
     
     updateFilesPanel();
-    renderTimeline();
+    renderTimeline(); // Esto mostrará el estado vacío
     updateStats();
+    renderPaginationControls(0, 1); // Ocultar paginación
 }
 
 function showHelpModal() {
@@ -727,6 +868,12 @@ function showNotificationModal(message) {
 
     // Clonamos el botón para limpiar listeners antiguos
     const newOkBtn = okBtn.cloneNode(true);
+    // Aplicar traducción al botón si existe
+    const lang = localStorage.getItem('language') || 'es';
+    if (typeof translations !== 'undefined' && translations[lang] && translations[lang].notificationOk) {
+        newOkBtn.textContent = translations[lang].notificationOk;
+    }
+    
     okBtn.parentNode.replaceChild(newOkBtn, okBtn);
 
     newOkBtn.addEventListener('click', () => {
@@ -743,11 +890,23 @@ function showConfirmationModal(message, onConfirm) {
 
     if (!overlay || !msgElement || !yesBtn || !noBtn) {
         console.error('Elementos del modal de confirmación no encontrados.');
-        onConfirm(); // Ejecutar la acción directamente como fallback
+        if (confirm(message)) { // Fallback a confirm nativo (puede no funcionar)
+            onConfirm();
+        }
         return;
     }
 
-    msgElement.textContent = message;
+    // Aplicar traducciones si están disponibles
+    const lang = localStorage.getItem('language') || 'es';
+    if (typeof translations !== 'undefined' && translations[lang]) {
+        msgElement.textContent = message; // El mensaje viene como argumento
+        // Podríamos tener una key 'confirmMessageDefault' si quisiéramos
+        yesBtn.textContent = translations[lang].confirmYes || 'Sí, borrar';
+        noBtn.textContent = translations[lang].confirmNo || 'Cancelar';
+    } else {
+         msgElement.textContent = message;
+    }
+    
     overlay.classList.remove('hidden');
 
     // Re-creamos los botones para evitar listeners duplicados

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visor de Línea de Tiempo de Logs</title>
+    <!-- CSS ahora se carga desde la carpeta 'css' -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -26,6 +27,7 @@
                     🗑️ Limpiar Todo
                 </button>
                 <button id="translate" class="btn-translate">
+                    <!-- Imagen ahora se carga desde la carpeta 'img' -->
                     <img src="img/translate.png" alt="traducir">
                 </button>
             </div>
@@ -100,7 +102,8 @@
                     </div>
                 </div>
                 <div id="filesList" class="files-list">
-                    </div>
+                    <!-- Los archivos se insertan aquí por JS -->
+                </div>
             </aside>
 
             
@@ -111,8 +114,18 @@
                         <h2>No hay eventos cargados</h2>
                         <p>Haz clic en "Cargar Archivo de Log" para comenzar</p>
                     </div>
-                    <div id="timeline" class="timeline"></div>
+                    <div id="timeline" class="timeline">
+                        <!-- Los eventos se insertan aquí por JS -->
+                    </div>
                 </div>
+                
+                <!-- INICIO: Controles de Paginación -->
+                <div id="paginationControls" class="pagination-controls hidden">
+                    <button id="prevPageBtn" class="btn btn-secondary" disabled>‹‹ Anteriores</button>
+                    <span id="pageInfo">Página 1 de 1</span>
+                    <button id="nextPageBtn" class="btn btn-secondary" disabled>Siguientes ››</button>
+                </div>
+                <!-- FIN: Controles de Paginación -->
             </div>
         </div>
 
@@ -178,27 +191,12 @@
         </div>
     </div>
     
+    <!-- Scripts ahora se cargan desde la carpeta 'js' -->
     <script src="js/neutralino.js"></script>
     <script src="js/parsers.js"></script>
-    <script src="js/main.js"></script>
     <script src="js/translate.js"></script>
+    <!-- main.js se carga al final para asegurar que translate.js esté disponible -->
+    <script src="js/main.js"></script>
     
-    <script>
-        window.addEventListener('load', function() {
-            if (typeof Neutralino === 'undefined') {
-                console.error('NEUTRALINO NO CARGADO - Ejecuta "neu update" en tu proyecto');
-                document.body.innerHTML = '<div style="padding: 40px; text-align: center; font-family: sans-serif;">' +
-                    '<h1 style="color: #ef4444;">⚠️ Error de Configuración</h1>' +
-                    '<p style="font-size: 18px; margin: 20px 0;">La biblioteca de Neutralino no está cargada.</p>' +
-                    '<p style="font-size: 16px; color: #64748b;">Por favor ejecuta los siguientes comandos:</p>' +
-                    '<pre style="background: #f1f5f9; padding: 20px; border-radius: 8px; text-align: left; max-width: 600px; margin: 20px auto;">' +
-                    'cd mi-app\n' +
-                    'neu update\n' +
-                    'neu run' +
-                    '</pre>' +
-                    '</div>';
-            }
-        });
-    </script>
 </body>
 </html>
