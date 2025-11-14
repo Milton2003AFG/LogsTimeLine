@@ -83,6 +83,7 @@ function setupEventListeners() {
     const helpBtnClose = document.getElementById('helpBtnClose');
     const prevPageBtn = document.getElementById('prevPageBtn');
     const nextPageBtn = document.getElementById('nextPageBtn');
+    const pageNumber = document.getElementById('pageNumber');
 
     if (loadBtn) {
         loadBtn.addEventListener('click', async () => {
@@ -147,6 +148,16 @@ function setupEventListeners() {
     if (nextPageBtn) {
         nextPageBtn.addEventListener('click', () => {
             goToPage(appState.currentPage + 1);
+        });
+    }
+
+    if (pageNumber) {
+        pageNumber.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                goToPage(parseInt(pageNumber.value, 10));
+                pageNumber.value = appState.currentPage;
+                pageNumber.blur();
+            }
         });
     }
     // Fin Listeners de Paginación 
@@ -513,7 +524,17 @@ function renderTimeline() {
     emptyState.classList.add('hidden');
     
     // Scroll al inicio de la línea de tiempo
-    timeline.scrollTop = 0;
+    // The scroll viewport is the .timeline-container element
+    // (see index.html id="timeline-container"). Reset that scroll
+    // position when changing pages so the user always starts at the
+    // top of the new page.
+    const timelineContainer = document.getElementById('timeline-container') || document.querySelector('.timeline-container');
+    if (timelineContainer) {
+        timelineContainer.scrollTop = 0;
+    } else {
+        // Fallback if container not found (legacy layout)
+        timeline.scrollTop = 0;
+    }
 }
 
 // --- Nueva Función: Controlar paginación ---
@@ -529,6 +550,10 @@ function goToPage(pageNumber) {
         pageNumber = totalPages;
     }
 
+    if(typeof pageNumber !== 'number' || isNaN(pageNumber)) {
+        pageNumber = appState.currentPage;
+    }
+
     if (pageNumber !== appState.currentPage) {
         appState.currentPage = pageNumber;
         requestAnimationFrame(() => renderTimeline());
@@ -540,6 +565,9 @@ function renderPaginationControls(totalFilteredCount, totalPages) {
     const controls = document.getElementById('paginationControls');
     const prevBtn = document.getElementById('prevPageBtn');
     const nextBtn = document.getElementById('nextPageBtn');
+    const pageNumber = document.getElementById('pageNumber');
+    pageNumber.value = appState.currentPage;
+    const page = document.getElementById('page');
     const pageInfo = document.getElementById('pageInfo');
 
     if (totalFilteredCount <= appState.eventsPerPage) {
@@ -551,12 +579,13 @@ function renderPaginationControls(totalFilteredCount, totalPages) {
 
     // Actualizar texto de info (usando traducciones si están disponibles)
     const lang = localStorage.getItem('language') || 'es';
-    let pageInfoText = `Página ${appState.currentPage} de ${totalPages}`;
+    let pageInfoText = `de ${totalPages}`;
     if (typeof translations !== 'undefined' && translations[lang] && translations[lang].pageInfo) {
         pageInfoText = translations[lang].pageInfo
             .replace('{currentPage}', appState.currentPage)
             .replace('{totalPages}', totalPages);
     }
+    page.textContent = translations[lang].page;
     pageInfo.textContent = pageInfoText;
 
 

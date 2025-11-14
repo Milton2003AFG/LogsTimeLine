@@ -507,9 +507,16 @@ body {
     padding: 28px;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
-    min-height: 500px;
+    min-height: 200px;
     position: relative;
-    overflow: hidden;
+    /* Make this inner container the scroll viewport so pagination
+       controls located after it stay visible. The actual timeline
+       (.timeline) can grow as tall as its content and its ::before
+       pseudo-element will span the full content height. */
+    max-height: 70vh; /* Ajusta esto según sea necesario */
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 10px; /* Espacio para el scrollbar */
     border: 1px solid var(--border-color);
 }
 
@@ -553,10 +560,11 @@ body {
     /* * SOLUCIÓN (Rendimiento): 
      * Hacemos la línea de tiempo scrollable para la paginación.
      */
-    max-height: 70vh; /* Ajusta esto según sea necesario */
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-right: 10px; /* Espacio para el scrollbar */
+    /* Scrolling moved to .timeline-container so the vertical line
+       (::before) drawn on this element can span the full height
+       of the timeline content while the container provides the
+       scroll viewport. */
+    overflow: visible;
 }
 
 .timeline.visible {
@@ -569,7 +577,7 @@ body {
     left: 32px;
     top: 0;
     bottom: 0;
-    width: 4px;
+    width: 10px;
     background: linear-gradient(to bottom, 
         var(--primary-color) 0%, 
         var(--primary-light) 50%, 
@@ -1089,11 +1097,32 @@ body {
     min-width: 140px; /* Ancho más pequeño que los botones del header */
 }
 
+.pagination-controls #page {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    min-width: auto;
+    text-align: center;
+} 
+
 .pagination-controls #pageInfo {
     font-size: 16px;
     font-weight: 700;
     color: var(--text-secondary);
-    min-width: 120px;
+    min-width: auto;
+    text-align: center;
+}
+
+.inputPage {
+    width: 40px;
+    padding: 0;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    border: 1px solid whitesmoke;
+    border-radius: 5px;
+    background: rgb(26, 26, 26);
+    color: var(--text-secondary);
     text-align: center;
 }
 /* FIN: Estilos de Paginación */
@@ -1132,7 +1161,7 @@ body {
         width: 100%;
     }
     
-    .timeline {
+    .timeline-container {
         max-height: 60vh; /* Más altura en tablet */
     }
 }

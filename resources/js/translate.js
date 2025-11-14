@@ -84,7 +84,8 @@ const translations = {
         // Pagination
         prevPage: "‹‹ Anteriores",
         nextPage: "Siguientes ››",
-        pageInfo: "Página {currentPage} de {totalPages}", // {currentPage} y {totalPages} serán reemplazados
+        page: "Página",
+        pageInfo: "de {totalPages}", // {currentPage} y {totalPages} serán reemplazados
         
         // Image alt
         translateAlt: "traducir"
@@ -172,7 +173,8 @@ const translations = {
         // Pagination
         prevPage: "‹‹ Previous",
         nextPage: "Next ››",
-        pageInfo: "Page {currentPage} of {totalPages}",
+        page: "Page",
+        pageInfo: "of {totalPages}",
         
         // Image alt
         translateAlt: "translate"

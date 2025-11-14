@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visor de Línea de Tiempo de Logs</title>
-    <!-- CSS ahora se carga desde la carpeta 'css' -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -27,7 +26,6 @@
                     🗑️ Limpiar Todo
                 </button>
                 <button id="translate" class="btn-translate">
-                    <!-- Imagen ahora se carga desde la carpeta 'img' -->
                     <img src="img/translate.png" alt="traducir">
                 </button>
             </div>
@@ -52,7 +50,6 @@
                 <span id="dateRange" class="stat-value">-</span>
             </div>
         </div>
-
         
         <div class="filters-section">
             <div class="filter-group filter-group-wide">
@@ -91,8 +88,7 @@
             </div>
         </div>
 
-        <div class="main-content">
-            
+        <div class="main-content">  
             <aside id="filesSidebar" class="files-sidebar hidden">
                 <div class="sidebar-header">
                     <h3>📂 Archivos</h3>
@@ -108,7 +104,7 @@
 
             
             <div class="timeline-wrapper">
-                <div class="timeline-container">
+                <div id="timeline-container" class="timeline-container">
                     <div id="emptyState" class="empty-state">
                         <div class="empty-icon">📄</div>
                         <h2>No hay eventos cargados</h2>
@@ -122,10 +118,11 @@
                 <!-- INICIO: Controles de Paginación -->
                 <div id="paginationControls" class="pagination-controls hidden">
                     <button id="prevPageBtn" class="btn btn-secondary" disabled>‹‹ Anteriores</button>
-                    <span id="pageInfo">Página 1 de 1</span>
+                    <span id="page">Página</span>
+                    <input type="text" class="inputPage" id="pageNumber">
+                    <span id="pageInfo"></span>
                     <button id="nextPageBtn" class="btn btn-secondary" disabled>Siguientes ››</button>
                 </div>
-                <!-- FIN: Controles de Paginación -->
             </div>
         </div>
 
