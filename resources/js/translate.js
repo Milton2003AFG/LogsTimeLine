@@ -1,5 +1,4 @@
 // Este archivo maneja todo el sistema de traducción ES/EN.
-// Contiene el objeto de traducciones y la lógica para cambiar el idioma.
 
 const translations = {
     es: {
@@ -85,14 +84,13 @@ const translations = {
         prevPage: "‹‹ Anteriores",
         nextPage: "Siguientes ››",
         page: "Página",
-        pageInfo: "de {totalPages}", // {currentPage} y {totalPages} serán reemplazados
+        pageInfo: "de {totalPages}", // {totalPages} será reemplazado
         
         // Image alt
         translateAlt: "traducir"
     },
     en: {
         // Header
-        // SOLUCIÓN: Eliminados los espacios en blanco extra
         mainTitle: "📊 Windows Log Timeline Viewer", 
         loadFileBtn: "📁 Load Log File",
         exportJsonBtn: "💾 Export to JSON",
@@ -342,7 +340,7 @@ function translatePage(lang) {
     const loadingText = document.querySelector('#loadingOverlay p');
     if (loadingText) loadingText.textContent = t.loadingText;
     
-    // Modal de confirmación (ej. borrar todo)
+    // Modal de confirmación 
     const confirmMessage = document.getElementById('confirmMessage');
     if (confirmMessage) {
         // No sobreescribir el mensaje si fue puesto dinámicamente
@@ -359,7 +357,7 @@ function translatePage(lang) {
     const notificationOk = document.getElementById('notificationBtnOk');
     if (notificationOk) notificationOk.textContent = t.notificationOk;
     
-    // --- Paginación ---
+    // Paginación
     const prevPageBtn = document.getElementById('prevPageBtn');
     if (prevPageBtn) prevPageBtn.textContent = t.prevPage;
     

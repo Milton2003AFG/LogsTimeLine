@@ -55,7 +55,7 @@ body {
     padding: 24px;
 }
 
-/* Header. El grid-template-columns fue corregido para que se mantenga en línea. */
+/* Header */
 .header {
     background: linear-gradient(135deg, var(--bg-primary) 0%, #1a2436 100%);
     padding: 20px 28px;
@@ -123,16 +123,10 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
-/*
- * SOLUCIÓN (Botones de tamaño fijo):
- * Añadimos un min-width a los botones del header para
- * que mantengan un tamaño uniforme entre idiomas.
- */
+/* Botones de tamaño fijo */
 .header-actions .btn {
     min-width: 190px;
 }
-/* Fin Solución */
-
 
 /* Efecto "ripple" al hacer clic */
 .btn::before {
@@ -218,7 +212,7 @@ body {
     align-items: center;
     justify-content: center;
     height: 44px;
-    min-width: 44px; /* Solución para botón de traducir */
+    min-width: 44px; 
     box-shadow: var(--shadow-sm);
 }
 
@@ -509,11 +503,7 @@ body {
     box-shadow: var(--shadow-md);
     min-height: 200px;
     position: relative;
-    /* Make this inner container the scroll viewport so pagination
-       controls located after it stay visible. The actual timeline
-       (.timeline) can grow as tall as its content and its ::before
-       pseudo-element will span the full content height. */
-    max-height: 70vh; /* Ajusta esto según sea necesario */
+    max-height: 70vh; 
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 10px; /* Espacio para el scrollbar */
@@ -557,13 +547,6 @@ body {
     display: none;
     position: relative;
     padding: 24px 0;
-    /* * SOLUCIÓN (Rendimiento): 
-     * Hacemos la línea de tiempo scrollable para la paginación.
-     */
-    /* Scrolling moved to .timeline-container so the vertical line
-       (::before) drawn on this element can span the full height
-       of the timeline content while the container provides the
-       scroll viewport. */
     overflow: visible;
 }
 
@@ -929,11 +912,6 @@ body {
     border-color: var(--primary-color);
 }
 
-/*
- * SOLUCIÓN (Modal de ayuda cortado):
- * Añadimos max-height y overflow-y para que el modal
- * sea scrollable si su contenido es muy alto.
- */
 .help-modal {
     background: linear-gradient(135deg, var(--bg-primary) 0%, #1a2436 100%);
     padding: 36px;
@@ -944,12 +922,9 @@ body {
     color: var(--text-primary);
     text-align: left;
     border: 2px solid var(--border-color);
-    
-    /* Propiedades añadidas: */
     max-height: 85vh; /* Límite de altura */
     overflow-y: auto;   /* Scroll vertical si es necesario */
 }
-/* Fin Solución */
 
 .help-modal h2 {
     font-size: 26px;
@@ -1072,10 +1047,7 @@ body {
     line-height: 1.6;
 }
 
-/*
- * INICIO: Estilos de Paginación
- * Estilos para los nuevos controles de "Anterior" y "Siguiente".
- */
+/* Estilos para los nuevos controles de "Anterior" y "Siguiente". */
 .pagination-controls {
     background: linear-gradient(135deg, var(--bg-primary) 0%, #1a2436 100%);
     padding: 20px;
@@ -1125,10 +1097,8 @@ body {
     color: var(--text-secondary);
     text-align: center;
 }
-/* FIN: Estilos de Paginación */
 
-
-/* A partir de aquí, los media queries para hacerlo responsivo */
+/* Media queries para hacerlo responsivo */
 @media (max-width: 1200px) {
     .header {
         grid-template-columns: 1fr;
@@ -1185,7 +1155,7 @@ body {
     
     .header-actions .btn {
         flex: 1;
-        min-width: 0; /* Dejar que los botones se ajusten en móvil */
+        min-width: 0; /* Los botones se ajustan en móvil */
     }
 
     .stats-bar {

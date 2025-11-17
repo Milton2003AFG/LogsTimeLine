@@ -32,7 +32,7 @@ const logIdPatterns = {
 };
 
 // Intenta detectar el nivel de log. Damos prioridad a las palabras clave
-// que están al inicio de la línea (ej. "Error ...")
+// que están al inicio de la línea
 function detectLogLevel(message) {
     const anchoredPatterns = {
         critical: /^Crítico\b|^Critical\b/i,
@@ -48,7 +48,7 @@ function detectLogLevel(message) {
         }
     }
 
-    // Si no lo encontramos al inicio, buscamos en cualquier parte (ej. en XML)
+    // Si no lo encontramos al inicio, buscamos en cualquier parte
     const fallbackPatterns = {
         critical: /<Level>(1|Crítico|Critical)<\/Level>/i,
         error: /<Level>(2|Error)<\/Level>/i,
@@ -67,8 +67,7 @@ function detectLogLevel(message) {
     return null;
 }
 
-// Extraer el Event ID es complicado, así que intentamos varios patrones.
-// Buscamos cosas como "EventID: 4624", "Service 1531", etc.
+// Extraer el Event ID
 function extractEventId(message) {
     // Patrón 1: Microsoft-Windows-XXX 1234 (el número después del nombre del servicio)
     let match = message.match(/Microsoft-Windows-[^\s]+\s+(\d{3,5})\s+/i);
@@ -91,7 +90,6 @@ function extractEventId(message) {
     if (match) return match[1];
     
     // Patrón 6: Cualquier secuencia de 4 dígitos después de un espacio
-    // (este es menos agresivo)
     match = message.match(/\s(\d{4})\s/);
     if (match) return match[1];
     
@@ -142,8 +140,7 @@ function parseJSON(data, fileName) {
                     const level = detectLogLevel(message);
                     
                     // Extraer eventId de múltiples fuentes posibles
-                    const eventId = obj.eventId || obj.EventId || obj.event_id || obj.id || extractEventId(message);
-                    
+                    const eventId = obj.eventId || obj.EventId || obj.event_id || obj.id || extractEventId(message);                  
                     events.push({
                         date: date,
                         message: message,
@@ -206,7 +203,7 @@ function parseXML(content, fileName) {
     return events;
 }
 
-// Parsea texto plano. La parte díficil es que intenta agrupar logs multilínea.
+// Parsea texto plano
 function parseText(content, fileName) {
     const events = [];
     const lines = content.split(/\r?\n/);
@@ -230,7 +227,7 @@ function parseText(content, fileName) {
         if (levelMatch && dateMatch) { 
             
             if (currentEvent) {
-                // Antes de guardar el evento anterior, lo limpiamos
+                // Antes de guardar el evento anterior, se limpia
                 currentEvent.message = currentEvent.message.trim();
                 // Intentar extraer eventId si aún no lo tiene
                 if (!currentEvent.eventId) {
@@ -257,7 +254,7 @@ function parseText(content, fileName) {
                 source: fileName,
                 level: normalizedLevel,
                 eventId: eventId,
-                id: eventId ? parseInt(eventId) : null  // Guardamos el ID numérico para ordenar
+                id: eventId ? parseInt(eventId) : null  // Guardar ID numérico para ordenar
             };
 
         } else if (currentEvent) {
@@ -275,7 +272,7 @@ function parseText(content, fileName) {
         }
     }
 
-    // No olvidar guardar el último evento que estaba en proceso
+    // Guardar el último evento que estaba en proceso
     if (currentEvent) {
         currentEvent.message = currentEvent.message.trim();
         // Intentar extraer eventId antes de guardar el último evento
@@ -299,7 +296,7 @@ function findDateInText(text) {
             
             if (date) { 
                 const matchIndex = match.index;
-                // Nos quedamos con la fecha que aparezca *primero* en la línea
+                // Nos quedamos con la fecha que aparezca primero en la línea
                 if (earliestMatch === null || matchIndex < earliestMatch.index) {
                     earliestMatch = { 
                         date: date,
@@ -313,11 +310,9 @@ function findDateInText(text) {
     return earliestMatch;
 }
 
-// Esta es la función que intenta convertir cualquier string de fecha en un objeto Date.
-// Es compleja porque los logs tienen mil formatos distintos.
+// Convertir cualquier string de fecha en un objeto Date.
 function parseDate(dateInput) {
     
-    // A veces las fechas vienen como timestamps numéricos
     if (typeof dateInput === 'number') {
         const d = new Date(dateInput);
         if (!isNaN(d.getTime()) && d.getFullYear() > 1970 && d.getFullYear() < 2050) {
@@ -331,18 +326,17 @@ function parseDate(dateInput) {
     }
 
     // 1. D/M/YYYY HH:MM:SS (o MM/DD/YYYY)
-    // Esta parte es delicada por la ambigüedad D/M vs M/D
     let match = dateInput.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})\b/);
     if (match) {
         let [, day, month, year, hour, minute, second] = match.map(Number);
         
         if (year > 1970 && year < 2050) {
-            // Primero intentamos M/D/YYYY
+            // M/D/YYYY
             if (month >= 1 && month <= 12) {
                 const d = new Date(year, month - 1, day, hour, minute, second);
                 if (!isNaN(d.getTime()) && d.getDate() === day) { return d; }
             }
-            // Si falla, intentamos D/M/YYYY
+            // D/M/YYYY
             if (day >= 1 && day <= 12) {
                 const d = new Date(year, day - 1, month, hour, minute, second);
                 if (!isNaN(d.getTime()) && d.getDate() === month) { return d; }
@@ -380,5 +374,5 @@ function parseDate(dateInput) {
         }
     }
 
-    return null; // Si nada funcionó, nos rendimos
+    return null; // Si nada funcionó, retorna null
 }

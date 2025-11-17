@@ -1,4 +1,4 @@
-// Aquí guardamos todo el estado global de la app
+// Estado global de la app
 const appState = {
     events: [],
     loadedFiles: [],
@@ -12,14 +12,14 @@ const appState = {
         value: ''
     },
     currentPage: 1,
-    eventsPerPage: 100 // Paginación: Mostrar 100 eventos por página
+    eventsPerPage: 100 // Paginación mostrar 100 eventos por página
 };
 
 async function init() {
     try {
         if (typeof Neutralino === 'undefined') {
             console.error('Neutralino no está cargado. Asegúrate de ejecutar "neu update" primero.');
-            // Mostramos el error de forma visual
+            // Mostramos el error
             showInitializationError();
             return;
         }
@@ -269,7 +269,7 @@ function getFilteredEvents() {
                  if (event.level !== mapped) return false;
             }
         }
-        return true; // Si pasó todos los filtros, ¡se muestra!
+        return true; // Si pasó todos los filtros, se muestra
     });
 }
 
@@ -328,7 +328,7 @@ async function loadFile(filePath) {
         const content = await Neutralino.filesystem.readFile(filePath);
         const extension = fileName.split('.').pop().toLowerCase();
 
-        // La magia del parseo ocurre en 'parsers.js'
+        // Parseo en 'parsers.js'
         const events = parseLogContent(content, extension, fileName);
 
         if (events.length === 0) {
@@ -339,7 +339,7 @@ async function loadFile(filePath) {
         appState.loadedFiles.push(fileName);
         appState.selectedFiles.push(fileName); // El nuevo archivo se selecciona por defecto
         
-        // Usamos requestAnimationFrame para no bloquear el UI después de cargar
+        // requestAnimationFrame para no bloquear el UI después de cargar
         requestAnimationFrame(() => {
             renderTimeline();
             updateStats();
@@ -368,7 +368,7 @@ function updateFilesPanel() {
 
     filesSidebar.classList.remove('hidden');
     
-    // Usar un DocumentFragment es mucho más rápido que añadir al DOM en bucle
+    // Usar un DocumentFragment para optimizar el renderizado
     const fragment = document.createDocumentFragment();
 
     appState.loadedFiles.forEach(fileName => {
@@ -408,7 +408,7 @@ function updateFilesPanel() {
     });
 
     filesList.innerHTML = ''; // Limpiamos la lista
-    filesList.appendChild(fragment); // Añadimos todo de golpe
+    filesList.appendChild(fragment); // Añadimos todo 
 }
 
 function handleFileCheckboxChange(fileName, isChecked) {
@@ -466,7 +466,7 @@ function renderTimeline() {
         return;
     }
 
-    // --- Lógica de Paginación ---
+    // Lógica de Paginación
     const totalPages = Math.ceil(totalFilteredCount / appState.eventsPerPage);
     if (appState.currentPage > totalPages) {
         appState.currentPage = totalPages;
@@ -474,7 +474,7 @@ function renderTimeline() {
     
     const startIndex = (appState.currentPage - 1) * appState.eventsPerPage;
     const endIndex = appState.currentPage * appState.eventsPerPage;
-    // --- Fin Lógica de Paginación ---
+    // Fin Lógica de Paginación 
 
 
     const sortedEvents = [...filteredEvents].sort((a, b) => {
@@ -501,9 +501,9 @@ function renderTimeline() {
         return appState.currentSort === 'asc' ? dateA - dateB : dateB - dateA;
     });
 
-    // --- Paginación: Cortamos los eventos a mostrar ---
+    // Paginación: Cortamos los eventos a mostrar 
     const pageEvents = sortedEvents.slice(startIndex, endIndex);
-    // --- Fin Paginación ---
+    // Fin Paginación 
 
     // Usamos un DocumentFragment para optimizar el renderizado
     const fragment = document.createDocumentFragment();
@@ -516,7 +516,7 @@ function renderTimeline() {
     timeline.innerHTML = '';
     timeline.appendChild(fragment);
 
-    // Actualizamos stats visibles (visibleEventsCount ahora se actualiza en updateStats)
+    // Actualizamos stats visibles 
     updateStats(); // Asegurarnos de que las stats están al día
     renderPaginationControls(totalFilteredCount, totalPages); // Dibujar controles de paginación
 
@@ -524,20 +524,19 @@ function renderTimeline() {
     emptyState.classList.add('hidden');
     
     // Scroll al inicio de la línea de tiempo
-    // The scroll viewport is the .timeline-container element
-    // (see index.html id="timeline-container"). Reset that scroll
-    // position when changing pages so the user always starts at the
-    // top of the new page.
+    // El scroll viewport está en el elemento .timeline-container
+    // Restablecer esa posición de scroll
+    // Al cambiar de página para que el usuario siempre comience en la parte superior de la nueva página.
     const timelineContainer = document.getElementById('timeline-container') || document.querySelector('.timeline-container');
     if (timelineContainer) {
         timelineContainer.scrollTop = 0;
     } else {
-        // Fallback if container not found (legacy layout)
+        // Fallback si el contenedor no se encuentra
         timeline.scrollTop = 0;
     }
 }
 
-// --- Nueva Función: Controlar paginación ---
+// Controlar paginación 
 function goToPage(pageNumber) {
     const filteredEvents = getFilteredEvents();
     const totalPages = Math.ceil(filteredEvents.length / appState.eventsPerPage);
@@ -560,7 +559,7 @@ function goToPage(pageNumber) {
     }
 }
 
-// --- Nueva Función: Dibujar controles de paginación ---
+// Dibujar controles de paginación 
 function renderPaginationControls(totalFilteredCount, totalPages) {
     const controls = document.getElementById('paginationControls');
     const prevBtn = document.getElementById('prevPageBtn');
@@ -577,7 +576,7 @@ function renderPaginationControls(totalFilteredCount, totalPages) {
 
     controls.classList.remove('hidden');
 
-    // Actualizar texto de info (usando traducciones si están disponibles)
+    // Actualizar texto de info usando traducciones si están disponibles
     const lang = localStorage.getItem('language') || 'es';
     let pageInfoText = `de ${totalPages}`;
     if (typeof translations !== 'undefined' && translations[lang] && translations[lang].pageInfo) {
@@ -616,7 +615,7 @@ function createEventElement(event) {
         levelBadge.textContent = event.level;
         summaryView.appendChild(levelBadge);
     } else {
-        // Ponemos un badge invisible para mantener la alineación
+        // Badge invisible para mantener la alineación
         const levelBadge = document.createElement('span');
         levelBadge.className = `log-level log-level-none`;
         levelBadge.innerHTML = '&nbsp;';
@@ -634,7 +633,7 @@ function createEventElement(event) {
     if (messageText.length > maxLen) {
         messageText = messageText.substring(0, maxLen) + '...';
     }
-    // Corregido: chequear si está vacío DESPUÉS de trim
+    // Verificar si está vacío después de trim
     if (messageText.trim().length === 0) {
         messageText = '(Mensaje vacío, haga clic para ver detalles)';
     }
@@ -895,7 +894,7 @@ function showNotificationModal(message) {
     msgElement.textContent = message;
     overlay.classList.remove('hidden');
 
-    // Clonamos el botón para limpiar listeners antiguos
+    // Botón para limpiar listeners antiguos
     const newOkBtn = okBtn.cloneNode(true);
     // Aplicar traducción al botón si existe
     const lang = localStorage.getItem('language') || 'es';
@@ -919,7 +918,7 @@ function showConfirmationModal(message, onConfirm) {
 
     if (!overlay || !msgElement || !yesBtn || !noBtn) {
         console.error('Elementos del modal de confirmación no encontrados.');
-        if (confirm(message)) { // Fallback a confirm nativo (puede no funcionar)
+        if (confirm(message)) { // Fallback a confirm nativo
             onConfirm();
         }
         return;
@@ -928,8 +927,7 @@ function showConfirmationModal(message, onConfirm) {
     // Aplicar traducciones si están disponibles
     const lang = localStorage.getItem('language') || 'es';
     if (typeof translations !== 'undefined' && translations[lang]) {
-        msgElement.textContent = message; // El mensaje viene como argumento
-        // Podríamos tener una key 'confirmMessageDefault' si quisiéramos
+        msgElement.textContent = message; 
         yesBtn.textContent = translations[lang].confirmYes || 'Sí, borrar';
         noBtn.textContent = translations[lang].confirmNo || 'Cancelar';
     } else {
@@ -938,7 +936,7 @@ function showConfirmationModal(message, onConfirm) {
     
     overlay.classList.remove('hidden');
 
-    // Re-creamos los botones para evitar listeners duplicados
+    // Creamos de nuevo los botones para evitar listeners duplicados
     const newYesBtn = yesBtn.cloneNode(true);
     yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
     
@@ -962,7 +960,7 @@ function hideConfirmationModal() {
     }
 }
 
-// Activa o desactiva la pantalla de carga (spinner)
+// Activa o desactiva la pantalla de carga
 function showLoading(show) {
     const overlay = document.getElementById('loadingOverlay');
     if (!overlay) return;
@@ -973,7 +971,7 @@ function showLoading(show) {
     }
 }
 
-// Nos aseguramos de que el DOM esté listo antes de ejecutar 'init'
+// Aseguramos de que el DOM esté listo antes de ejecutar 'init'
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
