@@ -30,7 +30,7 @@
       "maximize": false,
       "fullScreen": false,
       "alwaysOnTop": false,
-      "icon": "/resources/icons/appIcon.png",
+      "icon": "/resources/img/icon.png",
       "enableInspector": true,
       "borderless": false,
       "titleBarStyle": "default"
