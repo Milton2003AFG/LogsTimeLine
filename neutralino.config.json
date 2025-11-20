@@ -21,7 +21,7 @@
   ],
   "modes": {
     "window": {
-      "title": "Visor de Línea de Tiempo de Logs",
+      "title": "Windows Log Timeline Viewer",
       "width": 1200,
       "height": 800,
       "minWidth": 800,
@@ -37,7 +37,7 @@
     }
   },
   "cli": {
-    "binaryName": "log-viewer",
+    "binaryName": "Windows Log Timeline Viewer",
     "resourcesPath": "/resources/",
     "extensionsPath": "/extensions/",
     "clientLibrary": "/resources/js/neutralino.js",
