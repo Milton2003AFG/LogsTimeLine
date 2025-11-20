@@ -16,7 +16,7 @@ const translations = {
         dateRange: "Rango de fechas:",
         
         // Filters
-        searchLabel: "🔍 Buscar (ID, MSG, MSG, TEXTO):",
+        searchLabel: "🔍 Buscar (ID, MSG, LVL, TEXTO):",
         searchPlaceholder: "Escribe aquí o usa comandos",
         sortLevelLabel: "Ordenar por Nivel de Evento:",
         sortDateLabel: "Ordenar por Fecha:",
@@ -47,7 +47,7 @@ const translations = {
         helpCommandIdDesc: "Buscar por Event ID específico",
         helpCommandMsg: "MSG:error conexión",
         helpCommandMsgDesc: "Buscar texto en mensajes",
-        helpCommandLevel: "NIVEL:error",
+        helpCommandLevel: "LVL:error",
         helpCommandLevelDesc: "Filtrar por nivel (error, warning, info, critical, detailed)",
         helpCommandNormal: "texto normal",
         helpCommandNormalDesc: "Sin comando, busca en todos los mensajes",
@@ -56,7 +56,7 @@ const translations = {
         helpExample1Desc: "Eventos con ID 4624",
         helpExample2: "MSG:failed login",
         helpExample2Desc: "Mensajes con \"failed login\"",
-        helpExample3: "NIVEL:critical",
+        helpExample3: "LVL:critical",
         helpExample3Desc: "Solo eventos críticos",
         helpCloseBtn: "Cerrar",
         
@@ -104,7 +104,7 @@ const translations = {
         dateRange: "Date range:",
         
         // Filters
-        searchLabel: "🔍 Search (ID, MSG, LEVEL, TEXT):",
+        searchLabel: "🔍 Search (ID, MSG, LVL, TEXT):",
         searchPlaceholder: "Type here or use commands...",
         sortLevelLabel: "Sort by Event Level:",
         sortDateLabel: "Sort by Date:",
@@ -135,7 +135,7 @@ const translations = {
         helpCommandIdDesc: "Search by specific Event ID",
         helpCommandMsg: "MSG:error connection",
         helpCommandMsgDesc: "Search text in messages",
-        helpCommandLevel: "LEVEL:error",
+        helpCommandLevel: "LVL:error",
         helpCommandLevelDesc: "Filter by level (error, warning, info, critical, detailed)",
         helpCommandNormal: "normal text",
         helpCommandNormalDesc: "Without command, searches in all messages",
@@ -144,7 +144,7 @@ const translations = {
         helpExample1Desc: "Events with ID 4624",
         helpExample2: "MSG:failed login",
         helpExample2Desc: "Messages with \"failed login\"",
-        helpExample3: "LEVEL:critical",
+        helpExample3: "LVL:critical",
         helpExample3Desc: "Only critical events",
         helpCloseBtn: "Close",
         
@@ -283,7 +283,7 @@ function translatePage(lang) {
         if (msgStrong) msgStrong.textContent = t.helpCommandMsg;
         if (msgSpan) msgSpan.textContent = t.helpCommandMsgDesc;
         
-        // Comando NIVEL
+        // Comando LVL
         const nivelStrong = helpCommands[2].querySelector('strong');
         const nivelSpan = helpCommands[2].querySelector('span');
         if (nivelStrong) nivelStrong.textContent = t.helpCommandLevel;
@@ -304,7 +304,7 @@ function translatePage(lang) {
         // Ejemplo 1
         const ex1Code = helpExamples[0].querySelector('code');
         if (ex1Code) {
-            const textAfterCode = helpExamples[0].childNodes[2];
+            const textAfterCode = helpExamples[0].childNodes[1];
             if (ex1Code) ex1Code.textContent = t.helpExample1;
             if (textAfterCode) textAfterCode.textContent = ` - ${t.helpExample1Desc}`;
         }
@@ -312,7 +312,7 @@ function translatePage(lang) {
         // Ejemplo 2
         const ex2Code = helpExamples[1].querySelector('code');
         if (ex2Code) {
-            const textAfterCode = helpExamples[1].childNodes[2];
+            const textAfterCode = helpExamples[1].childNodes[1];
             if (ex2Code) ex2Code.textContent = t.helpExample2;
             if (textAfterCode) textAfterCode.textContent = ` - ${t.helpExample2Desc}`;
         }
@@ -320,7 +320,7 @@ function translatePage(lang) {
         // Ejemplo 3
         const ex3Code = helpExamples[2].querySelector('code');
         if (ex3Code) {
-            const textAfterCode = helpExamples[2].childNodes[2];
+            const textAfterCode = helpExamples[2].childNodes[1];
             if (ex3Code) ex3Code.textContent = t.helpExample3;
             if (textAfterCode) textAfterCode.textContent = ` - ${t.helpExample3Desc}`;
         }

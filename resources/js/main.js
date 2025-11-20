@@ -185,9 +185,9 @@ function parseSearchCommand(searchText) {
         return { type: 'MSG', value: msgMatch[1].trim() };
     }
     
-    const nivelMatch = trimmed.match(/^NIVEL:\s*(\w+)/i);
+    const nivelMatch = trimmed.match(/^LVL:\s*(\w+)/i);
     if (nivelMatch) {
-        return { type: 'NIVEL', value: nivelMatch[1].toLowerCase() };
+        return { type: 'LVL', value: nivelMatch[1].toLowerCase() };
     }
     
     // Si no hay comando, es una búsqueda de texto normal
@@ -223,7 +223,7 @@ function getFilteredEvents() {
                     }
                     break;
                 
-                case 'NIVEL':
+                case 'LVL':
                     // Mapeamos posibles valores en español/inglés al valor interno
                     const nivelMap = {
                         'error': 'error',
