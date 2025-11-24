@@ -21,7 +21,7 @@
   ],
   "modes": {
     "window": {
-      "title": "Windows Log Timeline Viewer",
+      "title": "WinLog TL",
       "width": 1200,
       "height": 800,
       "minWidth": 800,
@@ -37,7 +37,7 @@
     }
   },
   "cli": {
-    "binaryName": "Windows Log Timeline Viewer",
+    "binaryName": "WinLog TL",
     "resourcesPath": "/resources/",
     "extensionsPath": "/extensions/",
     "clientLibrary": "/resources/js/neutralino.js",
